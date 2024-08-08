@@ -2,9 +2,9 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>voris_log</name>
-  <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="daniel_regner@hotmail.com">daniel</maintainer>
+  <version>0.0.1</version>
+  <description>A package to log infos from topics</description>
+  <maintainer email="daniel_regner@hotmail.com">Daniel Regner</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
@@ -12,7 +12,7 @@
   <build_depend>cv_bridge</build_depend>
   <build_depend>message_filters</build_depend>
   <build_depend>geometry_msgs</build_depend>
-
+  <build_depend>image_transport</build_depend>
 
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>cv_bridge</exec_depend>

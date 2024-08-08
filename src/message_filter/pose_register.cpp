@@ -11,7 +11,7 @@ PoseSubscriberLog::PoseSubscriberLog() : Node("pose_sim_log") {
 
     // Initialize synchronizer
     syncApproximate = std::make_shared<message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<geometry_msgs::msg::PoseStamped, geometry_msgs::msg::PoseArray>>>(
-            message_filters::sync_policies::ApproximateTime<geometry_msgs::msg::PoseStamped, geometry_msgs::msg::PoseArray>(
+        message_filters::sync_policies::ApproximateTime<geometry_msgs::msg::PoseStamped, geometry_msgs::msg::PoseArray>(
                     100), *slam_pose, *gt_odom);
     syncApproximate->registerCallback(&PoseSubscriberLog::callback, this);
     //, std::placeholders::_1, std::placeholders::_2));

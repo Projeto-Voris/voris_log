@@ -19,7 +19,10 @@ find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(nav_msgs REQUIRED)
-
+find_package(OpenCV 4.4 REQUIRED)
+find_package(cv_bridge REQUIRED)
+find_package(image_transport REQUIRED)
+include_directories(include)
 if (TARGET tf2_geometry_msgs::tf2_geometry_msgs)
     get_target_property(_include_dirs tf2_geometry_msgs::tf2_geometry_msgs INTERFACE_INCLUDE_DIRECTORIES)
 else ()
@@ -38,10 +41,15 @@ add_executable(posearray_cb src/PoseArray/posearray_cb.cpp)
 ament_target_dependencies(posearray_cb geometry_msgs rclcpp)
 
 
+add_executable(stereo_save src/Image/stereo_img_save.cpp)
+ament_target_dependencies(stereo_save image_transport cv_bridge message_filters rclcpp sensor_msgs)
+target_link_libraries(stereo_save ${OpenCV_LIBS})
+
 install(TARGETS
         pose_log
         posestamped_cb
         posearray_cb
+        stereo_save
         DESTINATION lib/${PROJECT_NAME}
 )
 
