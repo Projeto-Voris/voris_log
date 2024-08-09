@@ -8,10 +8,12 @@ int main(int argc, char *argv[]) {
 }
 
 ImageSaver::ImageSaver()
-    : Node("image_saver"), save_images(false), counter_(0), visualize(true) {
+    : Node("image_saver"), save_images(false), counter_(0){
     // Declare and get the path parameter from the launch file
     this->declare_parameter("saving_path", "/home/daniel/Pictures/images");
+    this->declare_parameter("visualize", false);
     this->get_parameter("saving_path", path_);
+    this->get_parameter("visualize", visualize);
 
     // Verify or create the path directories
     verify_path();
@@ -56,7 +58,8 @@ void ImageSaver::verify_path() {
         }
     } else {
         RCLCPP_ERROR(this->get_logger(), "Directory already exists.");
-        rclcpp::shutdown(); // Shutdown the node if the directory cannot be created
+        save_images = false;
+        // rclcpp::shutdown(); // Shutdown the node if the directory cannot be created
 
     }
 }
@@ -65,36 +68,25 @@ void ImageSaver::imagesCB(const sensor_msgs::msg::Image::ConstSharedPtr &msgLeft
                           const sensor_msgs::msg::Image::ConstSharedPtr &msgRight) {
     std::lock_guard<std::mutex> lock(mutex_);
 
-    // char input;
-    // std::cin >> input;
-    //
-    // if (input == 's') {
-    //     save_images = true;
-    //     // Perform the desired action here
-    // } else if (input == 'q') {
-    //     RCLCPP_ERROR(this->get_logger(),"Quitting program.");
-    //     rclcpp::shutdown(); // Shutdown the node if the directory cannot be created
-    // }
-
 
     cv::Mat img_left, img_right;
     try {
-        img_left = cv_bridge::toCvCopy(msgLeft, "bayer_rggb8")->image;
-        img_right = cv_bridge::toCvCopy(msgRight, "bayer_rggb8")->image;
-        cv::cvtColor(img_left, img_left, cv::COLOR_BayerRG2BGR);
-        cv::cvtColor(img_right, img_right, cv::COLOR_BayerRG2BGR);
+        img_left = cv_bridge::toCvCopy(msgLeft, msgLeft->encoding)->image;
+        img_right = cv_bridge::toCvCopy(msgRight, msgLeft->encoding)->image;
+        cv::cvtColor(img_left, img_left, cv::COLOR_BayerRGGB2BGR);
+        cv::cvtColor(img_right, img_right, cv::COLOR_BayerRGGB2BGR);
     } catch (cv_bridge::Exception &e) {
         RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
         return;
     }
 
     if (visualize) {
-        cv::namedWindow("left", cv::WINDOW_NORMAL);
-        cv::namedWindow("right", cv::WINDOW_NORMAL);
-        cv::resizeWindow("left", 800, 600);
-        cv::resizeWindow("right", 800, 600);
-        cv::imshow("left", img_left);
-        cv::imshow("right", img_right);
+        cv::namedWindow("stereo", cv::WINDOW_NORMAL);
+        cv::Mat concatenated;
+        cv::hconcat(img_left, img_right, concatenated);
+        cv::resizeWindow("stereo", concatenated.cols/4, concatenated.rows/4);
+
+        cv::imshow("stereo", concatenated);
         cv::waitKey(10);
     }
 

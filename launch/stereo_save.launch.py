@@ -15,6 +15,11 @@ def generate_launch_description():
             description='Path to save images'
         ),
         DeclareLaunchArgument(
+            'visualize',
+            default_value='true',
+            description='Path to save images'
+        ),
+        DeclareLaunchArgument(
             'camera_1_image_topic',
             default_value='/left/image_raw',
             description='Topic for camera 1 image stream'
@@ -31,7 +36,7 @@ def generate_launch_description():
             executable='stereo_save',
             name='stereo_save',
             output='screen',
-            parameters=[{'saving_path': LaunchConfiguration('saving_path')}],
+            parameters=[{'saving_path': LaunchConfiguration('saving_path'), 'visualize': LaunchConfiguration('visualize')}],
             remappings=[
                 ('/camera_1/image_raw', LaunchConfiguration('camera_1_image_topic')),
                 ('/camera_2/image_raw', LaunchConfiguration('camera_2_image_topic'))
