@@ -31,15 +31,17 @@ private:
     std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image> > left_sub;
     std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image> > right_sub;
 
-    typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Image, sensor_msgs::msg::Image> sync_pol;
 
-    message_filters::Synchronizer<sync_pol> * sync_;
+    typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Image, sensor_msgs::msg::Image> SyncPolicy;
+
+    std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
 
     std::string path_;
     int counter_;
-    bool save_images;
+    bool save_images, visualize;
     std::mutex mutex_;
     std::thread key_thread_;
+
 };
 
 #endif // STEREO_IMG_SAVE_HPP
