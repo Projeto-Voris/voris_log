@@ -73,8 +73,8 @@ void ImageSaver::imagesCB(const sensor_msgs::msg::Image::ConstSharedPtr &msgLeft
     try {
         img_left = cv_bridge::toCvCopy(msgLeft, msgLeft->encoding)->image;
         img_right = cv_bridge::toCvCopy(msgRight, msgLeft->encoding)->image;
-        cv::cvtColor(img_left, img_left, cv::COLOR_BayerRGGB2BGR);
-        cv::cvtColor(img_right, img_right, cv::COLOR_BayerRGGB2BGR);
+        cv::cvtColor(img_left, img_left, cv::COLOR_BayerBG2BGR);
+        cv::cvtColor(img_right, img_right, cv::COLOR_BayeBG2BGR);
     } catch (cv_bridge::Exception &e) {
         RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
         return;
