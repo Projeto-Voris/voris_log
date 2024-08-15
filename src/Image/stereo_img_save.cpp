@@ -8,25 +8,23 @@ int main(int argc, char *argv[]) {
 }
 
 ImageSaver::ImageSaver()
-    : Node("image_saver"), save_images(false), counter_(0), visualize(true) {
+    : Node("image_saver"), save_images(false), counter_(0) {
     // Declare and get the path parameter from the launch file
-    this->declare_parameter("saving_path", "/home/daniel/Pictures/images");
-    this->declare_parameter("visualize", false);
+    this->declare_parameter("saving_path", "~/Pictures/images");
     this->get_parameter("saving_path", path_);
-    this->get_parameter("visualize", visualize);
 
     // Verify or create the path directories
-    verify_path();
+    if (!verify_path(path_ ,0)) {
+        RCLCPP_ERROR(this->get_logger(), "Error creating directory");
+     rclcpp::shutdown();
+    }
 
     // Initialize the subscribers using the node's interface directly
-    left_sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image> >(this, "left/image_raw");
-    right_sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image> >(this, "right/image_raw");
+    left_sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image> >(this, "camera_1/image_raw");
+    right_sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image> >(this, "camer_2/image_raw");
 
-    // list_folder_srv = create_service<voris_log::srv::ListFolders>("list_folders",
-    //                                                               std::bind(&ImageSaver::list_folder_cb, this,
-    //                                                                         std::placeholders::_1,
-    //                                                                         std::placeholders::_2));
-    save_image_srv = this->create_service<voris_log::srv::SaveImages>("/save_images",
+    // Initialize service
+    save_image_srv = this->create_service<voris_log::srv::SaveImages>("save_images",
                                                                       std::bind(&ImageSaver::save_image_cb, this,
                                                                           std::placeholders::_1,
                                                                           std::placeholders::_2));
@@ -36,37 +34,40 @@ ImageSaver::ImageSaver()
 
     // Register the callback
     sync_->registerCallback(std::bind(&ImageSaver::images_cb, this, std::placeholders::_1, std::placeholders::_2));
-
-
-    // Start a separate thread to monitor keyboard input
 }
 
 ImageSaver::~ImageSaver() {
-
 }
 
-void ImageSaver::verify_path() {
+bool ImageSaver::verify_path(std::string path_string, int counter) {
+
     // Check if the path exists
-    if (!std::filesystem::exists(path_)) {
+    if (!std::filesystem::exists(path_string)) {
         // Path does not exist, create the directory
-        if (std::filesystem::create_directory(path_)) {
+        if (std::filesystem::create_directory(path_string)) {
             RCLCPP_INFO(this->get_logger(), "Directory created successfully.");
 
-            if (std::filesystem::create_directory(path_ + "/left") &&
-                std::filesystem::create_directory(path_ + "/right")) {
+            if (std::filesystem::create_directory(path_string + "/left") &&
+                std::filesystem::create_directory(path_string + "/right")) {
                 RCLCPP_INFO(this->get_logger(), "Left and Right folders created successfully.");
+                return true;
             } else {
                 RCLCPP_ERROR(this->get_logger(), "Error creating Left and Right directories.");
+                return false;
             }
         } else {
             RCLCPP_ERROR(this->get_logger(), "Error creating main directory.");
-            rclcpp::shutdown(); // Shutdown the node if the directory cannot be created
+            return false;
         }
     } else {
-        RCLCPP_ERROR(this->get_logger(), "Directory already exists.");
-        path_ = path_ + "-1";
-        verify_path();
-        // rclcpp::shutdown(); // Shutdown the node if the directory cannot be created
+        RCLCPP_WARN(this->get_logger(), "Directory already exists.");
+        while (std::filesystem::exists(path_string)) {
+            counter ++;
+            RCLCPP_INFO(this->get_logger(), "Increase counter to %i", counter);
+            std::string new_path = path_ + "_" + std::to_string(counter);
+
+           return verify_path(new_path, counter);
+        }
     }
 }
 

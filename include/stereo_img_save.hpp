@@ -18,7 +18,7 @@ public:
     ~ImageSaver();
 
 private:
-    void verify_path();
+    bool verify_path(std::string path_string, int counter);
 
     void images_cb(const sensor_msgs::msg::Image::ConstSharedPtr &msgLeft,
                   const sensor_msgs::msg::Image::ConstSharedPtr &msgRight);
@@ -41,7 +41,7 @@ private:
     sensor_msgs::msg::Image::ConstSharedPtr msgLeft_, msgRight_;
     std::string path_;
     int counter_;
-    bool save_images, visualize;
+    bool save_images;
 
 };
 
