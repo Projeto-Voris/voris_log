@@ -14,9 +14,9 @@ ImageSaver::ImageSaver()
     this->get_parameter("saving_path", path_);
 
     // Verify or create the path directories
-    if (!verify_path(path_ ,0)) {
+    if (!verify_path(path_, 0)) {
         RCLCPP_ERROR(this->get_logger(), "Error creating directory");
-     rclcpp::shutdown();
+        rclcpp::shutdown();
     }
 
     // Initialize the subscribers using the node's interface directly
@@ -39,8 +39,7 @@ ImageSaver::ImageSaver()
 ImageSaver::~ImageSaver() {
 }
 
-bool ImageSaver::verify_path(std::string path_string, int counter) {
-
+bool ImageSaver::verify_path(const std::string &path_string, int counter = 0) {
     // Check if the path exists
     if (!std::filesystem::exists(path_string)) {
         // Path does not exist, create the directory
@@ -60,14 +59,14 @@ bool ImageSaver::verify_path(std::string path_string, int counter) {
             return false;
         }
     } else {
-        RCLCPP_WARN(this->get_logger(), "Directory already exists.");
-        while (std::filesystem::exists(path_string)) {
-            counter ++;
-            RCLCPP_INFO(this->get_logger(), "Increase counter to %i", counter);
-            std::string new_path = path_ + "_" + std::to_string(counter);
+        RCLCPP_WARN(this->get_logger(), "Directory '%s' already exists.", path_string.c_str());
+        counter++;
+        RCLCPP_INFO(this->get_logger(), "Increase counter to %i", counter);
 
-           return verify_path(new_path, counter);
-        }
+        // Create a new path by appending the counter
+        std::string new_path = path_string + "_" + std::to_string(counter);
+
+        return verify_path(new_path, counter);
     }
 }
 
