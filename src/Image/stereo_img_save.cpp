@@ -49,6 +49,7 @@ bool ImageSaver::verify_path(const std::string &path_string, int counter = 0) {
             if (std::filesystem::create_directory(path_string + "/left") &&
                 std::filesystem::create_directory(path_string + "/right")) {
                 RCLCPP_INFO(this->get_logger(), "Left and Right folders created successfully.");
+                path_ = path_string;
                 return true;
             } else {
                 RCLCPP_ERROR(this->get_logger(), "Error creating Left and Right directories.");
