@@ -17,8 +17,8 @@ public:
         : Node("stereo_image_view") {
 
         // Initialize subscribers
-        left_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image>>(this, "/SM3/left/image_raw");
-        right_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image>>(this, "/SM3/right/image_raw");
+        left_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image>>(this, "/sm3_left/image_raw");
+        right_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image>>(this, "/sm3_right/image_raw");
 
         // Initialize synchronizer with ApproximateTime policy
         sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicy>>(

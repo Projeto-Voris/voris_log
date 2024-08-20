@@ -8,8 +8,8 @@ def generate_launch_description():
             executable='stereo_view',
             name='stereo_view',
             remappings=[
-                ('left', '/camera_1/image_raw'),
-                ('right', '/camera_2/image_raw')],
+                ('/camera_1/image_raw','sm3_left/image_raw'),
+                ('/camera_2/image_raw', 'sm3_right/image_raw')],
             parameters=[{'_approximate_sync': True}]
         ),
     ])
