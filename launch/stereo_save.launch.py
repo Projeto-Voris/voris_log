@@ -3,25 +3,27 @@ from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from datetime import date
-
+import os
 
 def generate_launch_description():
+    user = os.getenv('USER')
+
     return LaunchDescription([
         # Declare launch arguments to allow remapping of image topics
         # Declare launch argument for the saving path
         DeclareLaunchArgument(
             'saving_path',
-            default_value='/home/voris/Pictures/SM3-{}'.format(date.today().strftime("%Y%m%d")),
+            default_value='/home/{}/Pictures/SM3-{}'.format(user,date.today().strftime("%Y%m%d")),
             description='Path to save images'
         ),
         DeclareLaunchArgument(
             'camera_1_image_topic',
-            default_value='/sm3_left/image_raw',
+            default_value='/SM3/left/image_raw',
             description='Topic for camera 1 image stream'
         ),
         DeclareLaunchArgument(
             'camera_2_image_topic',
-            default_value='/sm3_right/image_raw',
+            default_value='/SM3/right/image_raw',
             description='Topic for camera 2 image stream'
         ),
 
