@@ -9,12 +9,12 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             'camera_1_image_topic',
-            default_value='/SM3/left/image_raw',
+            default_value='/sm4_left/image_raw',
             description='Topic for camera 1 image stream'
         ),
         DeclareLaunchArgument(
             'camera_2_image_topic',
-            default_value='/SM3/right/image_raw',
+            default_value='/sm4_right/image_raw',
             description='Topic for camera 2 image stream'
         ),
 

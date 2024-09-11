@@ -62,9 +62,8 @@ ament_target_dependencies(posearray_cb geometry_msgs rclcpp)
 
 add_executable(stereo_save src/Image/stereo_img_save.cpp )
 target_include_directories(stereo_save PRIVATE include)
-ament_target_dependencies(stereo_save image_transport cv_bridge message_filters rclcpp sensor_msgs)
+ament_target_dependencies(stereo_save image_transport cv_bridge message_filters rclcpp sensor_msgs std_srvs)
 target_link_libraries(stereo_save ${OpenCV_LIBS} "${cpp_typesupport_target}")
-
 
 add_executable(stereo_view src/Image/stereo_image_view.cpp )
 target_include_directories(stereo_view PRIVATE include)
@@ -85,6 +84,12 @@ install(TARGETS
 install(DIRECTORY
         launch
         DESTINATION share/${PROJECT_NAME}
+)
+
+install(
+        PROGRAMS
+        scripts/noise_image.py
+        DESTINATION lib/${PROJECT_NAME}
 )
 
 ament_export_dependencies(rosidl_default_runtime)

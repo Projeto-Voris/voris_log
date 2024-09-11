@@ -11,7 +11,12 @@ ImageSaver::ImageSaver()
     : Node("image_saver"), save_images(false), counter_(0) {
     // Declare and get the path parameter from the launch file
     this->declare_parameter("saving_path", "~/Pictures/images");
+    this->declare_parameter("use_pattern", false);
+    this->declare_parameter("pattern_service", "pattern_change");
+
     this->get_parameter("saving_path", path_);
+    this->get_parameter("pattern_service", pattern_service_);
+    this->get_parameter("use_pattern", pattern_bool_);
 
     // Verify or create the path directories
     if (!verify_path(path_, 0)) {
@@ -22,6 +27,10 @@ ImageSaver::ImageSaver()
     // Initialize the subscribers using the node's interface directly
     left_sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image> >(this, "/camera_1/image_raw");
     right_sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image> >(this, "/camera_2/image_raw");
+
+    // Create a service client to request image change
+    change_image_client_ = this->create_client<std_srvs::srv::SetBool>(pattern_service_);
+
 
     // Initialize service
     save_image_srv = this->create_service<voris_log::srv::SaveImages>("save_images",
@@ -111,6 +120,16 @@ bool ImageSaver::save_image_cb(const std::shared_ptr<voris_log::srv::SaveImages:
     cv::imwrite(path_R, img_right);
     RCLCPP_INFO(this->get_logger(), "Saved images %s and %s", path_L.c_str(), path_R.c_str());
     counter_++;
-    res->result = true;
-    return true;
+    if (pattern_bool_) {
+        // Request the image change after saving images
+        auto request = std::make_shared<std_srvs::srv::SetBool::Request>();
+        request->data = true; // Pass any data if needed
+
+        auto future = change_image_client_->async_send_request(request);
+        res->result = true;
+    } else {
+        res->result = true;
+    }
+
+    return res->result;
 }
