@@ -65,6 +65,11 @@ target_include_directories(stereo_save PRIVATE include)
 ament_target_dependencies(stereo_save image_transport cv_bridge message_filters rclcpp sensor_msgs)
 target_link_libraries(stereo_save ${OpenCV_LIBS} "${cpp_typesupport_target}")
 
+add_executable(camera_img_save src/Image/single_image_save.cpp )
+target_include_directories(camera_img_save PRIVATE include)
+ament_target_dependencies(camera_img_save image_transport cv_bridge rclcpp sensor_msgs)
+target_link_libraries(camera_img_save ${OpenCV_LIBS} "${cpp_typesupport_target}")
+
 add_executable(stereo_view src/Image/stereo_image_view.cpp )
 target_include_directories(stereo_view PRIVATE include)
 ament_target_dependencies(stereo_view image_transport cv_bridge message_filters rclcpp sensor_msgs)
@@ -83,6 +88,7 @@ install(TARGETS
         stereo_save
         stereo_view
         images_acquisition
+        camera_img_save
         DESTINATION lib/${PROJECT_NAME}
 )
 
