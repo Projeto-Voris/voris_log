@@ -12,9 +12,10 @@ def generate_launch_description():
 
     return LaunchDescription([
         # Declare launch arguments to allow remapping of image topics
+        # Declare launch argument for the saving path
         DeclareLaunchArgument(
             'saving_path',
-            default_value='/home/{}/Pictures/SM3-{}'.format( user, date.today().strftime("%Y%m%d")),
+            default_value='/home/{}/Pictures/SM3-{}'.format(user,date.today().strftime("%Y%m%d")),
             description='Path to save images'
         ),
         DeclareLaunchArgument(
@@ -27,16 +28,6 @@ def generate_launch_description():
             default_value='/SM3/right/image_raw',
             description='Topic for camera 2 image stream'
         ),
-        DeclareLaunchArgument(
-            'pattern_topic',
-            default_value='/pattern_change',
-            description='Service name for projector node'
-        ),
-        DeclareLaunchArgument(
-            'use_pattern',
-            default_value='True',
-            description='Node of projection will be used?'
-        ),
 
         # Node definition
         Node(
@@ -44,11 +35,7 @@ def generate_launch_description():
             executable='stereo_save',
             name='stereo_save',
             output='screen',
-            parameters=[
-                {'saving_path': LaunchConfiguration('saving_path')},
-                {'pattern_topic': LaunchConfiguration('pattern_topic')},
-                {'use_pattern': LaunchConfiguration('use_pattern')}
-            ],
+            parameters=[{'saving_path': LaunchConfiguration('saving_path')}],
             remappings=[
                 ('/camera_1/image_raw', LaunchConfiguration('camera_1_image_topic')),
                 ('/camera_2/image_raw', LaunchConfiguration('camera_2_image_topic'))

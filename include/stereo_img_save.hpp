@@ -10,7 +10,6 @@
 #include <opencv2/opencv.hpp>
 #include <filesystem>
 #include "voris_log/srv/save_images.hpp"
-#include "std_srvs/srv/set_bool.hpp"
 
 class ImageSaver : public rclcpp::Node {
 public:
@@ -32,9 +31,7 @@ private:
     std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image> > left_sub;
     std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image> > right_sub;
 
-    rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr change_image_client_;
     rclcpp::Service<voris_log::srv::SaveImages>::SharedPtr save_image_srv;
-
 
     typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Image, sensor_msgs::msg::Image> SyncPolicy;
 
@@ -42,8 +39,6 @@ private:
 
 
     sensor_msgs::msg::Image::ConstSharedPtr msgLeft_, msgRight_;
-    bool pattern_bool_ = false;
-    std::string pattern_service_;
     std::string path_;
     int counter_;
     bool save_images;

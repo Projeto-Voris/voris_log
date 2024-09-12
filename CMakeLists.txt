@@ -62,13 +62,18 @@ ament_target_dependencies(posearray_cb geometry_msgs rclcpp)
 
 add_executable(stereo_save src/Image/stereo_img_save.cpp )
 target_include_directories(stereo_save PRIVATE include)
-ament_target_dependencies(stereo_save image_transport cv_bridge message_filters rclcpp sensor_msgs std_srvs)
+ament_target_dependencies(stereo_save image_transport cv_bridge message_filters rclcpp sensor_msgs)
 target_link_libraries(stereo_save ${OpenCV_LIBS} "${cpp_typesupport_target}")
 
 add_executable(stereo_view src/Image/stereo_image_view.cpp )
 target_include_directories(stereo_view PRIVATE include)
 ament_target_dependencies(stereo_view image_transport cv_bridge message_filters rclcpp sensor_msgs)
 target_link_libraries(stereo_view ${OpenCV_LIBS} "${cpp_typesupport_target}")
+
+add_executable(images_acquisition src/handle_node/image_acquisition.cpp )
+target_include_directories(images_acquisition PRIVATE include)
+ament_target_dependencies(images_acquisition message_filters rclcpp std_srvs)
+target_link_libraries(images_acquisition "${cpp_typesupport_target}")
 
 
 install(TARGETS
@@ -77,6 +82,7 @@ install(TARGETS
         posearray_cb
         stereo_save
         stereo_view
+        images_acquisition
         DESTINATION lib/${PROJECT_NAME}
 )
 
