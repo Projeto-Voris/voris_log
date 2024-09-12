@@ -38,8 +38,8 @@ private:
 
             cv::Mat left_image = cv_bridge::toCvCopy(left_msg, left_msg->encoding)->image;
             cv::Mat right_image = cv_bridge::toCvCopy(right_msg, right_msg->encoding)->image;
-            cv::cvtColor(left_image, left_image, cv::COLOR_BayerBG2BGR);
-            cv::cvtColor(right_image, right_image, cv::COLOR_BayerBG2BGR);
+            // cv::cvtColor(left_image, left_image, cv::COLOR_BayerBG2BGR);
+            // cv::cvtColor(right_image, right_image, cv::COLOR_BayerBG2BGR);
 
             if (left_image.empty() || right_image.empty()) {
                 RCLCPP_ERROR(this->get_logger(), "Received empty images.");
