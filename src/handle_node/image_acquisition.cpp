@@ -65,7 +65,7 @@ private:
         req1->data = true; // Example request data
 
         auto req2 = std::make_shared<voris_log::srv::SaveImages::Request>();
-        req2->reset_counter = true; // Example request data
+        req2->reset_counter = false; // Example request data
 
         // Check if service clients are available
         if (!client1_->wait_for_service(1s) || !client2_->wait_for_service(1s)) {
@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
     rclcpp::init(argc, argv);
 
     // Specify the number of times the services should be requested
-    int max_requests = 5; // Example: 5 requests
+    int max_requests = 100; // Example: 5 requests
     int period = 6;
     auto node = std::make_shared<MultiServiceNode>(max_requests, period);
     rclcpp::spin(node);

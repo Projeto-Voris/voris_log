@@ -103,6 +103,8 @@ bool ImageSaver::save_image_cb(const std::shared_ptr<voris_log::srv::SaveImages:
         img_counter_ = "00";
     } else if (counter_ >= 10 && counter_ < 100) {
         img_counter_ = "0";
+    }else if(counter_ >= 100 && counter_ < 1000) {
+        img_counter_ = "";
     }
 
     std::string path_L = path_ + "/left/L" + img_counter_ + std::to_string(counter_) + ".png";

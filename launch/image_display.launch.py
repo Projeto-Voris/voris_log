@@ -7,12 +7,12 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             'monitor_name',
-            default_value='HDMI-0',
+            default_value='DP-3',
             description='Monitor output port'
         ),
         DeclareLaunchArgument(
             'noise_freq',
-            default_value='20.0',
+            default_value='10.0',
             description='Random image noise frequence'
         ),
         Node(
