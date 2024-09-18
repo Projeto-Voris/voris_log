@@ -55,8 +55,8 @@ class ImageDisplayNode(Node):
         random_base = random.randint(30, 50)
 
         # Vectorized function to compute noise for each coordinate
-        noise_function = np.vectorize(lambda x, y: pnoise2(x / self.frequency, y / self.frequency, octaves=6,
-                                                           persistence=0.5, lacunarity=2.0,
+        noise_function = np.vectorize(lambda x, y: pnoise2(x / self.frequency, y / self.frequency, octaves=8,
+                                                           persistence=0.2, lacunarity=2.0,
                                                            repeatx=self.image_width, repeaty=self.image_height,
                                                            base=random_base))
 
@@ -65,7 +65,7 @@ class ImageDisplayNode(Node):
 
         # Normalize and convert to uint8
         self.get_logger().info("Image created")
-        pattern_image = np.clip((noise_values + 0.5) * 255, 0, 255).astype(np.uint8)
+        pattern_image = np.clip((noise_values + 0.35) * 255, 0, 255).astype(np.uint8)
         return pattern_image
 
     def construct_window(self):
