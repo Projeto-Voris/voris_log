@@ -80,6 +80,10 @@ target_include_directories(images_acquisition PRIVATE include)
 ament_target_dependencies(images_acquisition message_filters rclcpp std_srvs)
 target_link_libraries(images_acquisition "${cpp_typesupport_target}")
 
+add_executable(stereo_tools src/stereo_tools/stereo_tools.cpp )
+target_include_directories(stereo_tools PRIVATE include)
+ament_target_dependencies(stereo_tools image_transport cv_bridge message_filters rclcpp sensor_msgs)
+target_link_libraries(stereo_tools ${OpenCV_LIBS} "${cpp_typesupport_target}")
 
 install(TARGETS
         pose_log
@@ -89,6 +93,7 @@ install(TARGETS
         stereo_view
         images_acquisition
         camera_img_save
+        stereo_tools
         DESTINATION lib/${PROJECT_NAME}
 )
 
