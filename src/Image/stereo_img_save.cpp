@@ -24,7 +24,7 @@ ImageSaver::ImageSaver()
     right_sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image> >(this, "/camera_2/image_raw");
 
     // Initialize service
-    save_image_srv = this->create_service<voris_log::srv::SaveImages>("save_images",
+    save_image_srv = this->create_service<voris_log::srv::SaveImages>("/save_images",
                                                                       std::bind(&ImageSaver::save_image_cb, this,
                                                                           std::placeholders::_1,
                                                                           std::placeholders::_2));

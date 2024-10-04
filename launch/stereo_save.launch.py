@@ -1,31 +1,52 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, TextSubstitution, PathJoinSubstitution
 from launch_ros.actions import Node
 from datetime import date
 import os
 
-
 def generate_launch_description():
-    user = os.getenv('USER')
-    sm = 'SM3'
+    # Get user environment variable
+    user = os.getenv('USER', 'default_user')  # Fallback to 'default_user' if $USER is not set
+    today_date = date.today().strftime("%Y%m%d")  # Get the current date
+    os.makedirs('/home/{}/Pictures/image_logs/SM2'.format(user), exist_ok=True)
+    os.makedirs('/home/{}/Pictures/image_logs/SM3'.format(user), exist_ok=True)
+    os.makedirs('/home/{}/Pictures/image_logs/SM4'.format(user), exist_ok=True)
 
     return LaunchDescription([
-        # Declare launch arguments to allow remapping of image topics
-        # Declare launch argument for the saving path
+        # Declare the launch argument for 'SM'
+        DeclareLaunchArgument(
+            'SM',
+            default_value='SM3',
+            description='This is the sm argument'
+        ),
+
+        # Declare the launch argument for the saving path
         DeclareLaunchArgument(
             'saving_path',
-            default_value='/home/{}/Pictures/SM3-{}'.format(user,date.today().strftime("%Y%m%d")),
+            default_value=PathJoinSubstitution([
+                TextSubstitution(text='/home/{}/Pictures/image_logs'.format(user)),
+                LaunchConfiguration('SM'),
+                TextSubstitution(text='{}'.format(today_date)),
+            ]),
             description='Path to save images'
         ),
+
+        # Declare launch arguments to allow remapping of image topics
         DeclareLaunchArgument(
             'camera_1_image_topic',
-            default_value='/SM3/left/image_raw',
+            default_value=PathJoinSubstitution([
+                TextSubstitution(text='/'),
+                LaunchConfiguration('SM'),
+                TextSubstitution(text='left/image_raw')]),
             description='Topic for camera 1 image stream'
         ),
         DeclareLaunchArgument(
             'camera_2_image_topic',
-            default_value='/SM3/right/image_raw',
+            default_value=PathJoinSubstitution([
+                TextSubstitution(text='/'),
+                LaunchConfiguration('SM'),
+                TextSubstitution(text='right/image_raw')]),
             description='Topic for camera 2 image stream'
         ),
 
@@ -38,7 +59,10 @@ def generate_launch_description():
             parameters=[{'saving_path': LaunchConfiguration('saving_path')}],
             remappings=[
                 ('/camera_1/image_raw', LaunchConfiguration('camera_1_image_topic')),
-                ('/camera_2/image_raw', LaunchConfiguration('camera_2_image_topic'))
+                ('/camera_2/image_raw', LaunchConfiguration('camera_2_image_topic')),
+                ('/save_images', PathJoinSubstitution([TextSubstitution(text='/'),
+                                                       LaunchConfiguration('SM'),
+                                                       TextSubstitution(text='save_image')]))
             ]
         )
     ])
