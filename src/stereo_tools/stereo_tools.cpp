@@ -113,14 +113,9 @@ class StereoTunner : public rclcpp::Node
         stereo_params_message.data.push_back(disp12MaxDiff);
         stereo_params_message.data.push_back(minDisparity);
 
-        filter_params_message.layout.dim.push_back(std_msgs::msg::MultiArrayDimension());
+        stereo_params_message.data.push_back(lambda*500);
+        stereo_params_message.data.push_back(sigma);
 
-        filter_params_message.layout.dim[0].size = 2;
-        filter_params_message.layout.dim[0].label = "lenght";
-        filter_params_message.layout.dim[0].stride = 1;
-
-        filter_params_message.data.push_back(lambda);
-        filter_params_message.data.push_back(sigma);
 
         stereo_params_publisher_->publish(stereo_params_message);
         filter_params_publisher_->publish(filter_params_message);
