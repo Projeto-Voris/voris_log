@@ -119,6 +119,7 @@ class StereoTunner : public rclcpp::Node
 
         stereo_params_publisher_->publish(stereo_params_message);
         filter_params_publisher_->publish(filter_params_message);
+        stereo_params_message.data.clear();
         cv::waitKey(1);
     }
     cv_bridge::CvImageConstPtr cv_ptrImg;
