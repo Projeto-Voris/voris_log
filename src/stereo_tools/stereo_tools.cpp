@@ -2,25 +2,17 @@
 #include <functional>
 #include <memory>
 #include <string>
-
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/opencv.hpp>
+#include <cv_bridge/cv_bridge.h>
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/string.hpp"
 #include "std_msgs/msg/int16_multi_array.hpp"
 #include "std_msgs/msg/float32_multi_array.hpp"
-
-#include "std_msgs/msg/multi_array_dimension.hpp"
-
-#include <sensor_msgs/msg/image.hpp>
-
-#include<opencv2/core/core.hpp>
-#include<opencv2/opencv.hpp>
-
-#include <cv_bridge/cv_bridge.h>
+#include "sensor_msgs/msg/image.hpp"
+#include <fstream>
 
 using namespace std::chrono_literals;
-
-/* This example creates a subclass of Node and uses std::bind() to register a
-* member function as a callback from the timer. */
 
 int numDisparities = 12;
 int blockSize = 75;
@@ -39,11 +31,33 @@ int sigma = 2;
 
 using std::placeholders::_1;
 
+void save_params_to_yaml() {
+    // Save the parameters to a .yaml file
+    cv::FileStorage fs("stereo_params.yaml", cv::FileStorage::WRITE);
+
+    fs << "numDisparities" << numDisparities;
+    fs << "blockSize" << blockSize;
+    fs << "preFilterType" << preFilterType;
+    fs << "preFilterSize" << preFilterSize;
+    fs << "preFilterCap" << preFilterCap;
+    fs << "minDisparity" << minDisparity;
+    fs << "textureThreshold" << textureThreshold;
+    fs << "uniquenessRatio" << uniquenessRatio;
+    fs << "speckleRange" << speckleRange;
+    fs << "speckleWindowSize" << speckleWindowSize;
+    fs << "disp12MaxDiff" << disp12MaxDiff;
+    fs << "lambda" << lambda;
+    fs << "sigma" << sigma;
+
+    fs.release();
+    RCLCPP_INFO(rclcpp::get_logger("stereo_tools"), "Parameters saved to stereo_params.yaml");
+}
+
 class StereoTunner : public rclcpp::Node
 {
   public:
     StereoTunner()
-    : Node("stereo_tunner"), count_(0)
+    : Node("stereo_tools"), count_(0)
     {
       stereo_params_publisher_ = this->create_publisher<std_msgs::msg::Int16MultiArray>("stereo_params", 10);
       filter_params_publisher_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("filter_params", 10);
@@ -54,8 +68,10 @@ class StereoTunner : public rclcpp::Node
 
     void create_trackbars() {
         static const std::string OPENCV_WINDOW_D = "Image D window";
-        cv::namedWindow(OPENCV_WINDOW_D,cv::WINDOW_NORMAL);
+        cv::namedWindow(OPENCV_WINDOW_D, cv::WINDOW_NORMAL);
         cv::resizeWindow(OPENCV_WINDOW_D, 800, 600);
+
+        // Trackbars for stereo parameters
         cv::createTrackbar("numDisparities", OPENCV_WINDOW_D, &numDisparities, 18);
         cv::createTrackbar("blockSize", OPENCV_WINDOW_D, &blockSize, 50);
         cv::createTrackbar("preFilterType", OPENCV_WINDOW_D, &preFilterType, 1);
@@ -74,7 +90,6 @@ class StereoTunner : public rclcpp::Node
   private:
     void image_callback(const sensor_msgs::msg::Image::ConstSharedPtr & imgmsg)
     {
-        
         try
         {
             cv_ptrImg = cv_bridge::toCvShare(imgmsg, "mono16");
@@ -87,45 +102,45 @@ class StereoTunner : public rclcpp::Node
         cv::imshow("Disparity Image", cv_ptrImg->image);
         cv::waitKey(1);
     }
+
     void timer_callback()
     {
         auto stereo_params_message = std_msgs::msg::Int16MultiArray();
         auto filter_params_message = std_msgs::msg::Float32MultiArray();
 
         stereo_params_message.layout.dim.push_back(std_msgs::msg::MultiArrayDimension());
-
         stereo_params_message.layout.dim[0].size = 15;
-        stereo_params_message.layout.dim[0].label = "lenght";
+        stereo_params_message.layout.dim[0].label = "length";
         stereo_params_message.layout.dim[0].stride = 1;
 
         stereo_params_message.data.push_back(preFilterCap);
-        stereo_params_message.data.push_back(preFilterSize*2+5);
+        stereo_params_message.data.push_back(preFilterSize * 2 + 5);
         stereo_params_message.data.push_back(preFilterType);
-
         stereo_params_message.data.push_back(textureThreshold);
         stereo_params_message.data.push_back(uniquenessRatio);
-
-        stereo_params_message.data.push_back(numDisparities*16);
-        stereo_params_message.data.push_back(blockSize*2+5);
+        stereo_params_message.data.push_back(numDisparities * 16);
+        stereo_params_message.data.push_back(blockSize * 2 + 5);
         stereo_params_message.data.push_back(speckleRange);
-
-        stereo_params_message.data.push_back(speckleWindowSize*2);
+        stereo_params_message.data.push_back(speckleWindowSize * 2);
         stereo_params_message.data.push_back(disp12MaxDiff);
         stereo_params_message.data.push_back(minDisparity);
 
         filter_params_message.layout.dim.push_back(std_msgs::msg::MultiArrayDimension());
-
         filter_params_message.layout.dim[0].size = 2;
-        filter_params_message.layout.dim[0].label = "lenght";
+        filter_params_message.layout.dim[0].label = "length";
         filter_params_message.layout.dim[0].stride = 1;
-
         filter_params_message.data.push_back(lambda);
         filter_params_message.data.push_back(sigma);
 
         stereo_params_publisher_->publish(stereo_params_message);
         filter_params_publisher_->publish(filter_params_message);
-        cv::waitKey(1);
+
+        // Check for keyboard input to save parameters
+        if (cv::waitKey(1) == 's') {
+            save_params_to_yaml();
+        }
     }
+
     cv_bridge::CvImageConstPtr cv_ptrImg;
     rclcpp::TimerBase::SharedPtr timer_;
     rclcpp::Publisher<std_msgs::msg::Int16MultiArray>::SharedPtr stereo_params_publisher_;

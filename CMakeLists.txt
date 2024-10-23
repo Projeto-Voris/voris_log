@@ -42,6 +42,7 @@ endif ()
 
 rosidl_generate_interfaces(${PROJECT_NAME}
     "srv/SaveImages.srv"
+    #"srv/Test.srv"
         DEPENDENCIES builtin_interfaces std_msgs)
 
 
