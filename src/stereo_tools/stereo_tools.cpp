@@ -35,16 +35,16 @@ void save_params_to_yaml() {
     // Save the parameters to a .yaml file
     cv::FileStorage fs("stereo_params.yaml", cv::FileStorage::WRITE);
 
-    fs << "numDisparities" << numDisparities;
-    fs << "blockSize" << blockSize;
+    fs << "numDisparities" << numDisparities*16;
+    fs << "blockSize" << blockSize*2+5;
     fs << "preFilterType" << preFilterType;
-    fs << "preFilterSize" << preFilterSize;
+    fs << "preFilterSize" << preFilterSize*2+5;
     fs << "preFilterCap" << preFilterCap;
     fs << "minDisparity" << minDisparity;
     fs << "textureThreshold" << textureThreshold;
     fs << "uniquenessRatio" << uniquenessRatio;
     fs << "speckleRange" << speckleRange;
-    fs << "speckleWindowSize" << speckleWindowSize;
+    fs << "speckleWindowSize" << speckleWindowSize*2;
     fs << "disp12MaxDiff" << disp12MaxDiff;
     fs << "lambda" << lambda;
     fs << "sigma" << sigma;
