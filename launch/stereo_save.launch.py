@@ -39,6 +39,7 @@ def generate_launch_description():
                 TextSubstitution(text='/'),
                 LaunchConfiguration('SM'),
                 TextSubstitution(text='left/image_raw')]),
+
             description='Topic for camera 1 image stream'
         ),
         DeclareLaunchArgument(
