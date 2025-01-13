@@ -29,6 +29,7 @@ find_package(OpenCV 4.5.4 EXACT)
 find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+find_package(rclpy REQUIRED)
 find_package(std_srvs REQUIRED)
 include_directories(include)
 
@@ -107,6 +108,8 @@ install(DIRECTORY
 install(
         PROGRAMS
         scripts/noise_image.py
+        scripts/point_cloud_las.py
+        scripts/point_cloud_csv.py
         DESTINATION lib/${PROJECT_NAME}
 )
 
