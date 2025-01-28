@@ -11,10 +11,15 @@
 #include <message_filters/sync_policies/approximate_time.h>
 #include <opencv2/opencv.hpp>
 
+#include <std_srvs/srv/set_bool.hpp>
+
 class StereoImageView : public rclcpp::Node {
 public:
     StereoImageView()
         : Node("stereo_image_view") {
+        // Read the parameter for show_window_ from the launch file
+        this->declare_parameter<bool>("show_window", false);  // Declare the parameter with a default value
+        this->get_parameter("show_window", show_window_);
 
         // Initialize subscribers
         left_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image>>(this, "/camera_1/image_raw");
@@ -26,6 +31,11 @@ public:
 
         // Register callback
         sync_->registerCallback(std::bind(&StereoImageView::imageCallback, this, std::placeholders::_1, std::placeholders::_2));
+
+        // Serviço para ativar/desativar a janela
+        service_show_window = this->create_service<std_srvs::srv::SetBool>("show_window",
+            std::bind(&StereoImageView::showImagesCallback, this, std::placeholders::_1, std::placeholders::_2)
+        );
     }
 
 private:
@@ -34,7 +44,10 @@ private:
     void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr& left_msg,
                        const sensor_msgs::msg::Image::ConstSharedPtr& right_msg) {
         try {
-
+            if (!show_window_) {
+                cv::destroyAllWindows();
+                return;
+            }
 
             cv::Mat left_image = cv_bridge::toCvCopy(left_msg, left_msg->encoding)->image;
             cv::Mat right_image = cv_bridge::toCvCopy(right_msg, right_msg->encoding)->image;
@@ -69,10 +82,19 @@ private:
         }
     }
 
+    void showImagesCallback(const std_srvs::srv::SetBool::Request::SharedPtr request,
+                              std_srvs::srv::SetBool::Response::SharedPtr response) {
+        show_window_ = request->data;
+        response->success = true;
+        response->message = show_window_ ? "Window enabled." : "Window disabled.";
+        RCLCPP_INFO(this->get_logger(), "Window display set to: %s", show_window_ ? "ON" : "OFF");
+    }
 
     std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image>> left_sub_;
     std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image>> right_sub_;
     std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
+    rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr service_show_window;
+    bool show_window_; // Controle da exibição da janela
 };
 
 int main(int argc, char* argv[]) {

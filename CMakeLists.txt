@@ -74,7 +74,7 @@ target_link_libraries(camera_img_save ${OpenCV_LIBS} "${cpp_typesupport_target}"
 
 add_executable(stereo_view src/Image/stereo_image_view.cpp )
 target_include_directories(stereo_view PRIVATE include)
-ament_target_dependencies(stereo_view image_transport cv_bridge message_filters rclcpp sensor_msgs)
+ament_target_dependencies(stereo_view image_transport cv_bridge message_filters rclcpp sensor_msgs std_srvs)
 target_link_libraries(stereo_view ${OpenCV_LIBS} "${cpp_typesupport_target}")
 
 add_executable(images_acquisition src/handle_node/image_acquisition.cpp )
