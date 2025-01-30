@@ -44,10 +44,9 @@ def generate_launch_description():
         Node(
             package='voris_log',
             executable='stereo_view',
-            name=[
-                LaunchConfiguration('SM'),  # Substitutes the value of SM
-                TextSubstitution(text='_view')  # Concatenates the static text '_view'
-            ],            output='screen',
+            namespace=LaunchConfiguration('SM'),
+            name='stereo_view',
+            output='screen',
             remappings=[
                 ('/camera_1/image_raw', LaunchConfiguration('camera_1_image_topic')),
                 ('/camera_2/image_raw', LaunchConfiguration('camera_2_image_topic'))

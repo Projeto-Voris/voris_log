@@ -55,8 +55,8 @@ def generate_launch_description():
         Node(
             package='voris_log',
             executable='stereo_save',
-            name=[LaunchConfiguration('SM'), TextSubstitution(text='_view')],
-            #name=PathJoinSubstitution([LaunchConfiguration('SM'),'_view']),
+            namespace=LaunchConfiguration('SM'),
+            name='stereo_save',
             output='screen',
             parameters=[{'saving_path': LaunchConfiguration('saving_path')}],
             remappings=[
