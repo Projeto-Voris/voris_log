@@ -20,6 +20,8 @@ public:
         // Read the parameter for show_window_ from the launch file
         this->declare_parameter<bool>("show_window", false);  // Declare the parameter with a default value
         this->get_parameter("show_window", show_window_);
+        this->declare_parameter<bool>("rectificate_image",false);
+        this->get_parameter("rectificate_image",rectificate_);
 
         // Initialize subscribers
         left_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image>>(this, "/camera_1/image_raw");
@@ -35,6 +37,9 @@ public:
         // Serviço para ativar/desativar a janela
         service_show_window = this->create_service<std_srvs::srv::SetBool>("show_window",
             std::bind(&StereoImageView::showImagesCallback, this, std::placeholders::_1, std::placeholders::_2)
+        );
+        service_rectificate_image = this->create_service<std_srvs::srv::SetBool>("rectificate_image",
+            std::bind(&StereoImageView::rectificatedImageCallback, this, std::placeholders::_1, std::placeholders::_2)
         );
     }
 
@@ -89,12 +94,21 @@ private:
         response->message = show_window_ ? "Window enabled." : "Window disabled.";
         RCLCPP_INFO(this->get_logger(), "Window display set to: %s", show_window_ ? "ON" : "OFF");
     }
+    void rectificatedImageCallback(const std_srvs::srv::SetBool::Request::SharedPtr request,
+                                std_srvs::srv::SetBool::Response::SharedPtr response){
+        rectificate_ = request -> data;
+        response->success = true;
+        response->message = rectificate_ ? "image rectificated":"image raw";
+
+    }
 
     std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image>> left_sub_;
     std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image>> right_sub_;
     std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
     rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr service_show_window;
+    rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr service_rectificate_image;
     bool show_window_; // Controle da exibição da janela
+    bool rectificate_; // Controle da rectificaçao da imagem 
 };
 
 int main(int argc, char* argv[]) {
