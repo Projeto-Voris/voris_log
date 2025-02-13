@@ -121,10 +121,13 @@ private:
 int main(int argc, char* argv[]) {
     rclcpp::init(argc, argv);
     if (argc<3) {
-        RCLCPP_ERROR(rclcpp::get_loger("rclcpp"),"Usage: StereoImageView_node <left_info_topic> <right_info_topic>")
+        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"),"Usage: StereoImageView_node <left_info_topic> <right_info_topic>")
     }
     std::string left_info_topic = argv[1];
     std::string right_info_topic = argv[2];
+
+    auto left_camera_info = sensor_msgs::msg::CameraInfo();
+    auto right_camera_info = sensor_msgs::msg::CameraInfo();
 
     auto left_camera_info_received = false;
     auto right_camera_info_received = false;
