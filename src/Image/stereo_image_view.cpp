@@ -10,21 +10,24 @@
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include <opencv2/opencv.hpp>
+#include <rclcpp/wait_for_message.hpp>
 
 #include <std_srvs/srv/set_bool.hpp>
 
 class StereoImageView : public rclcpp::Node {
 public:
-    StereoImageView(sensor_msg::msg::CameraInfo info_left, sensor_msg::msg::CameraInfo info_right)
+    StereoImageView(sensor_msgs::msg::CameraInfo info_left,sensor_msgs::msg::CameraInfo info_right)
         : Node("stereo_image_view") {
         // Read the parameter for show_window_ from the launch file
         this->declare_parameter<bool>("show_window", false);  // Declare the parameter with a default value
         this->get_parameter("show_window", show_window_);
         this->declare_parameter<bool>("rectificate_image",false);
         this->get_parameter("rectificate_image",rectificate_);
-
-        left_camera_info = info_left
-        right_camera_info = info_right
+        
+        auto left_camera_info = sensor_msgs::msg::CameraInfo();
+        auto right_camera_info = sensor_msgs::msg::CameraInfo();
+        left_camera_info = info_left;
+        right_camera_info = info_right;
 
         // Initialize subscribers
         left_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image>>(this, "/camera_1/image_raw");
@@ -112,8 +115,8 @@ private:
     std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
     rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr service_show_window;
     rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr service_rectificate_image;
-    sensor_msg::msg::CameraInfo left_camera_info;
-    sensor_msg::msg::CameraInfo right_camera_info;
+    sensor_msgs::msg::CameraInfo left_camera_info;
+    sensor_msgs::msg::CameraInfo right_camera_info;
     bool show_window_; // Controle da exibição da janela
     bool rectificate_; // Controle da rectificaçao da imagem 
 };
@@ -121,7 +124,7 @@ private:
 int main(int argc, char* argv[]) {
     rclcpp::init(argc, argv);
     if (argc<3) {
-        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"),"Usage: StereoImageView_node <left_info_topic> <right_info_topic>")
+        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"),"Usage: StereoImageView_node <left_info_topic> <right_info_topic>");
     }
     std::string left_info_topic = argv[1];
     std::string right_info_topic = argv[2];
