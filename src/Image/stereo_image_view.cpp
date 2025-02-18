@@ -11,7 +11,7 @@
 #include <message_filters/sync_policies/approximate_time.h>
 #include <opencv2/opencv.hpp>
 #include <rclcpp/wait_for_message.hpp>
-
+#include <opencv2/imgproc.hpp>
 #include <std_srvs/srv/set_bool.hpp>
 
 class StereoImageView : public rclcpp::Node {
@@ -60,12 +60,17 @@ private:
                 cv::destroyAllWindows();
                 return;
             }
+            
+
+            if (!rectificate_){
+                RectfyimgCallback(left_msg,right_msg);
+                
+            }
 
             cv::Mat left_image = cv_bridge::toCvCopy(left_msg, left_msg->encoding)->image;
             cv::Mat right_image = cv_bridge::toCvCopy(right_msg, right_msg->encoding)->image;
             // cv::cvtColor(left_image, left_image, cv::COLOR_BayerBG2BGR);
             // cv::cvtColor(right_image, right_image, cv::COLOR_BayerBG2BGR);
-
             if (left_image.empty() || right_image.empty()) {
                 RCLCPP_ERROR(this->get_logger(), "Received empty images.");
                 return;
@@ -103,11 +108,55 @@ private:
     }
     void rectificatedImageCallback(const std_srvs::srv::SetBool::Request::SharedPtr request,
                                 std_srvs::srv::SetBool::Response::SharedPtr response){
+
+         
         rectificate_ = request -> data;
         response->success = true;
         response->message = rectificate_ ? "image rectificated":"image raw";
 
+    }
+    void RectfyimgCallback(const sensor_msgs::msg::Image::ConstSharedPtr& img_left_msg,
+                            const sensor_msgs::msg::Image::ConstSharedPtr& img_right_msg){
+        cv::Mat intrinsics_left(3, 3, cv::DataType<double>::type);
+        cv::Mat dist_coeffs_left(5,1, cv::DataType<double>::type);
+        cv::Mat intrinsics_right(3, 3, cv::DataType<double>::type);
+        cv::Mat dist_coeffs_right(5,1, cv::DataType<double>::type);
+        cv::Mat rotation(3, 3, cv::DataType<double>::type);
+        cv::Mat translation(3,1,cv::DataType<double>::type);
+        
 
+        cv::Mat image_left = cv_bridge::toCvCopy(img_left_msg, img_left_msg->encoding)->image;
+        cv::Mat image_right = cv_bridge::toCvCopy(img_right_msg, img_right_msg->encoding)->image;
+
+        intrinsics_left.at<double>(0, 0) = left_camera_info.k[0]; //fx
+        intrinsics_left.at<double>(0, 2) = left_camera_info.k[2]; //cx
+        intrinsics_left.at<double>(1, 1) = left_camera_info.k[4]; //fy
+        intrinsics_left.at<double>(1, 2) = left_camera_info.k[5]; //cy
+        intrinsics_left.at<double>(2, 2) = 1;
+
+        dist_coeffs_left.at<double>(0) = left_camera_info.d[0];
+        dist_coeffs_left.at<double>(1) = left_camera_info.d[1];
+        dist_coeffs_left.at<double>(2) = left_camera_info.d[2];
+        dist_coeffs_left.at<double>(3) = left_camera_info.d[3];
+        dist_coeffs_left.at<double>(4) = left_camera_info.d[4];
+
+        intrinsics_right.at<double>(0, 0) = right_camera_info.k[0]; //fx
+        intrinsics_right.at<double>(0, 2) = right_camera_info.k[2]; //cx
+        intrinsics_right.at<double>(1, 1) = right_camera_info.k[4]; //fy
+        intrinsics_right.at<double>(1, 2) = right_camera_info.k[5]; //cy
+        intrinsics_right.at<double>(2, 2) = 1;
+
+        dist_coeffs_right.at<double>(0) = right_camera_info.d[0];
+        dist_coeffs_right.at<double>(1) = right_camera_info.d[1];
+        dist_coeffs_right.at<double>(2) = right_camera_info.d[2];
+        dist_coeffs_right.at<double>(3) = right_camera_info.d[3];
+        dist_coeffs_right.at<double>(4) = right_camera_info.d[4];
+
+        
+
+        cv::undistort(image_left,left_image_rectfied,intrinsics_left,dist_coeffs_left);
+        cv::undistort(image_right,right_image_rectfied,intrinsics_right,dist_coeffs_right);
+        return;
     }
 
     std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image>> left_sub_;
@@ -117,6 +166,8 @@ private:
     rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr service_rectificate_image;
     sensor_msgs::msg::CameraInfo left_camera_info;
     sensor_msgs::msg::CameraInfo right_camera_info;
+    cv::Mat left_image_rectfied;
+    cv::Mat right_image_rectfied;
     bool show_window_; // Controle da exibição da janela
     bool rectificate_; // Controle da rectificaçao da imagem 
 };
