@@ -91,6 +91,7 @@ bool ImageSaver::save_image_cb(const std::shared_ptr<voris_log::srv::SaveImages:
         cv::cvtColor(img_right, img_right, cv::COLOR_BayerBG2BGR);
     } catch (cv_bridge::Exception &e) {
         RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
+        res->message = "cv_bridge exception";
         res->result = false;
         return res->result;
     }
@@ -112,7 +113,10 @@ bool ImageSaver::save_image_cb(const std::shared_ptr<voris_log::srv::SaveImages:
     cv::imwrite(path_L, img_left);
     cv::imwrite(path_R, img_right);
     RCLCPP_INFO(this->get_logger(), "Saved images %s and %s", path_L.c_str(), path_R.c_str());
-    counter_++;
+    char buffer[50];
+    sprintf(buffer, "Images saved n° %i", counter_);
+    res->message = buffer;
     res->result = true;
+    counter_++;
     return res->result;
 }

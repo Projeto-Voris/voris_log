@@ -1,3 +1,4 @@
 bool reset_counter
 ---
+string message
 bool result
