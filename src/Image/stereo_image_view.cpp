@@ -17,21 +17,18 @@
 class StereoImageView : public rclcpp::Node {
 public:
     StereoImageView(sensor_msgs::msg::CameraInfo info_left,sensor_msgs::msg::CameraInfo info_right)
-        : Node("stereo_image_view") {
+        : Node("stereo_image_view"), left_camera_info(info_left),right_camera_info(info_right) {
         // Read the parameter for show_window_ from the launch file
         this->declare_parameter<bool>("show_window", false);  // Declare the parameter with a default value
         this->get_parameter("show_window", show_window_);
         this->declare_parameter<bool>("rectificate_image",false);
         this->get_parameter("rectificate_image",rectificate_);
         
-        auto left_camera_info = sensor_msgs::msg::CameraInfo();
-        auto right_camera_info = sensor_msgs::msg::CameraInfo();
-        left_camera_info = info_left;
-        right_camera_info = info_right;
+        
 
         // Initialize subscribers
-        left_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image>>(this, "/camera_1/image_raw");
-        right_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image>>(this, "/camera_2/image_raw");
+        left_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image>>(this, "/SM2/left/image_raw");
+        right_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image>>(this, "/SM2/right/image_raw");
 
 
         // Initialize synchronizer with ApproximateTime policy
@@ -55,20 +52,24 @@ private:
 
     void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr& left_msg,
                        const sensor_msgs::msg::Image::ConstSharedPtr& right_msg) {
+        
         try {
-            if (!show_window_) {
+            if (show_window_) {
                 cv::destroyAllWindows();
                 return;
             }
             
+            left_image = cv_bridge::toCvCopy(left_msg, left_msg->encoding)->image;
+            right_image = cv_bridge::toCvCopy(right_msg, right_msg->encoding)->image;
 
-            if (!rectificate_){
-                RectfyimgCallback(left_msg,right_msg);
+            
+            
+            
                 
-            }
+            
 
-            cv::Mat left_image = cv_bridge::toCvCopy(left_msg, left_msg->encoding)->image;
-            cv::Mat right_image = cv_bridge::toCvCopy(right_msg, right_msg->encoding)->image;
+            
+
             // cv::cvtColor(left_image, left_image, cv::COLOR_BayerBG2BGR);
             // cv::cvtColor(right_image, right_image, cv::COLOR_BayerBG2BGR);
             if (left_image.empty() || right_image.empty()) {
@@ -81,6 +82,7 @@ private:
                              left_image.cols, left_image.rows, right_image.cols, right_image.rows);
                 return;
             }
+            RectfyimgCallback(left_image,right_image);
 
             RCLCPP_INFO(this->get_logger(), "GOT images");
             // Concatenate the images horizontally
@@ -113,21 +115,24 @@ private:
         rectificate_ = request -> data;
         response->success = true;
         response->message = rectificate_ ? "image rectificated":"image raw";
+        RCLCPP_INFO(this->get_logger(), "rectification set to: %s", rectificate_ ? "ON" : "OFF");
 
     }
-    void RectfyimgCallback(const sensor_msgs::msg::Image::ConstSharedPtr& img_left_msg,
-                            const sensor_msgs::msg::Image::ConstSharedPtr& img_right_msg){
+    void RectfyimgCallback(const cv::Mat img_left,
+                            const cv::Mat img_right){
+        if(!rectificate_){
         cv::Mat intrinsics_left(3, 3, cv::DataType<double>::type);
         cv::Mat dist_coeffs_left(5,1, cv::DataType<double>::type);
         cv::Mat intrinsics_right(3, 3, cv::DataType<double>::type);
         cv::Mat dist_coeffs_right(5,1, cv::DataType<double>::type);
         cv::Mat rotation(3, 3, cv::DataType<double>::type);
         cv::Mat translation(3,1,cv::DataType<double>::type);
+        cv::Mat rectification_matrix_left(3,3,cv::DataType<double>::type);
+        cv::Mat rectification_matrix_right(3,3,cv::DataType<double>::type);
+        int size;
+
         
-
-        cv::Mat image_left = cv_bridge::toCvCopy(img_left_msg, img_left_msg->encoding)->image;
-        cv::Mat image_right = cv_bridge::toCvCopy(img_right_msg, img_right_msg->encoding)->image;
-
+        size = left_camera_info.height*left_camera_info.width
         intrinsics_left.at<double>(0, 0) = left_camera_info.k[0]; //fx
         intrinsics_left.at<double>(0, 2) = left_camera_info.k[2]; //cx
         intrinsics_left.at<double>(1, 1) = left_camera_info.k[4]; //fy
@@ -152,11 +157,15 @@ private:
         dist_coeffs_right.at<double>(3) = right_camera_info.d[3];
         dist_coeffs_right.at<double>(4) = right_camera_info.d[4];
 
+        cv::stereoRectify(intrinsics_left,dist_coeffs_left,intrinsics_right,dist_coeffs_right,size,rectification_matrix_left,rectification_matrix_right)
+
+        cv::undistort(img_left,left_image_rectified,intrinsics_left,dist_coeffs_left);
+        cv::undistort(img_right,right_image_rectified,intrinsics_right,dist_coeffs_right);
+        right_image= left_image;
+        left_image = left_image_rectfied;
         
 
-        cv::undistort(image_left,left_image_rectfied,intrinsics_left,dist_coeffs_left);
-        cv::undistort(image_right,right_image_rectfied,intrinsics_right,dist_coeffs_right);
-        return;
+        }
     }
 
     std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image>> left_sub_;
@@ -168,6 +177,8 @@ private:
     sensor_msgs::msg::CameraInfo right_camera_info;
     cv::Mat left_image_rectfied;
     cv::Mat right_image_rectfied;
+    cv::Mat left_image;
+    cv::Mat right_image;
     bool show_window_; // Controle da exibição da janela
     bool rectificate_; // Controle da rectificaçao da imagem 
 };
