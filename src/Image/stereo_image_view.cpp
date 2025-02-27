@@ -129,10 +129,12 @@ private:
         cv::Mat translation(3,1,cv::DataType<double>::type);
         cv::Mat rectification_matrix_left(3,3,cv::DataType<double>::type);
         cv::Mat rectification_matrix_right(3,3,cv::DataType<double>::type);
-        int size;
+        cv::Mat R1, R2, P1, P2, Q;
+        cv::Size siz;
+        
 
         
-        size = left_camera_info.height*left_camera_info.width
+        
         intrinsics_left.at<double>(0, 0) = left_camera_info.k[0]; //fx
         intrinsics_left.at<double>(0, 2) = left_camera_info.k[2]; //cx
         intrinsics_left.at<double>(1, 1) = left_camera_info.k[4]; //fy
@@ -157,12 +159,37 @@ private:
         dist_coeffs_right.at<double>(3) = right_camera_info.d[3];
         dist_coeffs_right.at<double>(4) = right_camera_info.d[4];
 
-        cv::stereoRectify(intrinsics_left,dist_coeffs_left,intrinsics_right,dist_coeffs_right,size,rectification_matrix_left,rectification_matrix_right)
+        siz.width = left_camera_info.width;
+        siz.height = left_camera_info.height;
 
-        cv::undistort(img_left,left_image_rectified,intrinsics_left,dist_coeffs_left);
-        cv::undistort(img_right,right_image_rectified,intrinsics_right,dist_coeffs_right);
-        right_image= left_image;
-        left_image = left_image_rectfied;
+        rotation.at<double>(0, 0) = right_camera_info.p[0];
+        rotation.at<double>(0, 1) = right_camera_info.p[1];
+        rotation.at<double>(0, 2) = right_camera_info.p[2];
+        rotation.at<double>(1, 0) = right_camera_info.p[4];
+        rotation.at<double>(1, 1) = right_camera_info.p[5];
+        rotation.at<double>(1, 2) = right_camera_info.p[6];
+        rotation.at<double>(2, 0) = right_camera_info.p[8];
+        rotation.at<double>(2, 1) = right_camera_info.p[9];
+        rotation.at<double>(2, 2) = right_camera_info.p[10];
+
+
+        translation.at<double>(0) = right_camera_info.p[3];
+        translation.at<double>(1) = right_camera_info.p[7];
+        translation.at<double>(2) = right_camera_info.p[11];
+
+        cv::stereoRectify(intrinsics_left,dist_coeffs_left,intrinsics_right,dist_coeffs_right,siz,rotation,translation,R1,R2,P1,P2,Q);
+        
+        
+        cv::Mat new_cameramatrix_left = cv::getOptimalNewCameraMatrix(intrinsics_left,dist_coeffs_left,siz,1,siz,0);
+        cv::Mat new_cameramatrix_right = cv::getOptimalNewCameraMatrix(intrinsics_right,dist_coeffs_right,siz,1,siz,0);
+        
+        cv::initUndistortRectifyMap(intrinsics_left,dist_coeffs_left,R1,new_cameramatrix_left,siz,CV_32FC1,map1_left,map2_left);
+        cv::initUndistortRectifyMap(intrinsics_right,dist_coeffs_right,R1,new_cameramatrix_right,siz,CV_32FC1,map1_right,map2_right);
+
+        cv::remap(img_left,left_image_rectified,map1_left,map2_left, cv::INTER_LINEAR);
+        cv::remap(img_right,right_image_rectified,map1_right,map2_right, cv::INTER_LINEAR);
+        left_image = left_image_rectified;
+        right_image = right_image_rectified;
         
 
         }
@@ -175,10 +202,12 @@ private:
     rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr service_rectificate_image;
     sensor_msgs::msg::CameraInfo left_camera_info;
     sensor_msgs::msg::CameraInfo right_camera_info;
-    cv::Mat left_image_rectfied;
-    cv::Mat right_image_rectfied;
+    cv::Mat left_image_rectified;
+    cv::Mat right_image_rectified;
     cv::Mat left_image;
     cv::Mat right_image;
+    cv::Mat map1_left,map1_right;
+    cv::Mat map2_left,map2_right;
     bool show_window_; // Controle da exibição da janela
     bool rectificate_; // Controle da rectificaçao da imagem 
 };
