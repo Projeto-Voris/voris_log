@@ -54,7 +54,7 @@ private:
                        const sensor_msgs::msg::Image::ConstSharedPtr& right_msg) {
         
         try {
-            if (show_window_) {
+            if (!show_window_) {
                 cv::destroyAllWindows();
                 return;
             }
@@ -120,7 +120,7 @@ private:
     }
     void RectfyimgCallback(const cv::Mat img_left,
                             const cv::Mat img_right){
-        if(!rectificate_){
+        if(rectificate_){
         cv::Mat intrinsics_left(3, 3, cv::DataType<double>::type);
         cv::Mat dist_coeffs_left(5,1, cv::DataType<double>::type);
         cv::Mat intrinsics_right(3, 3, cv::DataType<double>::type);
@@ -133,7 +133,7 @@ private:
         cv::Size siz;
         
 
-        
+        if(first_rectification){
         
         intrinsics_left.at<double>(0, 0) = left_camera_info.k[0]; //fx
         intrinsics_left.at<double>(0, 2) = left_camera_info.k[2]; //cx
@@ -185,6 +185,9 @@ private:
         
         cv::initUndistortRectifyMap(intrinsics_left,dist_coeffs_left,R1,new_cameramatrix_left,siz,CV_32FC1,map1_left,map2_left);
         cv::initUndistortRectifyMap(intrinsics_right,dist_coeffs_right,R1,new_cameramatrix_right,siz,CV_32FC1,map1_right,map2_right);
+        
+        first_rectification = false;   
+        }
 
         cv::remap(img_left,left_image_rectified,map1_left,map2_left, cv::INTER_LINEAR);
         cv::remap(img_right,right_image_rectified,map1_right,map2_right, cv::INTER_LINEAR);
@@ -210,6 +213,7 @@ private:
     cv::Mat map2_left,map2_right;
     bool show_window_; // Controle da exibição da janela
     bool rectificate_; // Controle da rectificaçao da imagem 
+    bool first_rectification = true;
 };
 
 int main(int argc, char* argv[]) {
