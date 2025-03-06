@@ -67,6 +67,11 @@ target_include_directories(stereo_save PRIVATE include)
 ament_target_dependencies(stereo_save image_transport cv_bridge message_filters rclcpp sensor_msgs)
 target_link_libraries(stereo_save ${OpenCV_LIBS} "${cpp_typesupport_target}")
 
+add_executable(multicam_save src/Image/multicam_save.cpp )
+target_include_directories(multicam_save PRIVATE include)
+ament_target_dependencies(multicam_save image_transport cv_bridge message_filters rclcpp sensor_msgs)
+target_link_libraries(multicam_save ${OpenCV_LIBS} "${cpp_typesupport_target}")
+
 add_executable(camera_img_save src/Image/single_image_save.cpp )
 target_include_directories(camera_img_save PRIVATE include)
 ament_target_dependencies(camera_img_save image_transport cv_bridge rclcpp sensor_msgs)
