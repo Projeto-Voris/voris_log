@@ -41,7 +41,7 @@ private:
         auto rescaled_msg = cv_bridge::CvImage(msg->header, sensor_msgs::image_encodings::BGR8, resized_image).toImageMsg();
 
         // Publish the rescaled image
-        rescaled_msg->header.stamp = this->now();
+        // rescaled_msg->header.stamp = this->now();
         publisher_->publish(*rescaled_msg);
     }
 
