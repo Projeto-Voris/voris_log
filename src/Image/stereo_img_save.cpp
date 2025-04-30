@@ -29,7 +29,7 @@ ImageSaver::ImageSaver()
                                                                           std::placeholders::_1,
                                                                           std::placeholders::_2));
     // Initialize the sync_ object after initializing subscribers
-    sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicy> >(
+    sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicy>>(
         SyncPolicy(10), *left_sub, *right_sub);
 
     // Register the callback
