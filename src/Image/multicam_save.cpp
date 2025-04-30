@@ -48,7 +48,8 @@ bool ImageSaver::verify_path(const std::string &path_string, int counter = 0) {
         // Path does not exist, create the directory
         if (std::filesystem::create_directory(path_string)) {
             RCLCPP_INFO(this->get_logger(), "Directory created successfully.");
-
+            std::filesystem::create_directory(path_string + "/S1");
+            std::filesystem::create_directory(path_string + "/S2");
             if (std::filesystem::create_directory(path_string + "/S1/left") &&
                 std::filesystem::create_directory(path_string + "/S1/right") &&
                 std::filesystem::create_directory(path_string + "/S2/left") &&

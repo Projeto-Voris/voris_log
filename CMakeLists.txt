@@ -67,6 +67,11 @@ target_include_directories(stereo_save PRIVATE include)
 ament_target_dependencies(stereo_save image_transport cv_bridge message_filters rclcpp sensor_msgs)
 target_link_libraries(stereo_save ${OpenCV_LIBS} "${cpp_typesupport_target}")
 
+add_executable(save_dt_images src/Image/save_images_dt.cpp )
+target_include_directories(save_dt_images PRIVATE include)
+ament_target_dependencies(save_dt_images image_transport cv_bridge message_filters rclcpp sensor_msgs)
+target_link_libraries(save_dt_images ${OpenCV_LIBS} "${cpp_typesupport_target}")
+
 add_executable(multicam_save src/Image/multicam_save.cpp )
 target_include_directories(multicam_save PRIVATE include)
 ament_target_dependencies(multicam_save image_transport cv_bridge message_filters rclcpp sensor_msgs)
@@ -104,10 +109,12 @@ install(TARGETS
         posearray_cb
         stereo_save
         stereo_view
+        save_dt_images
         images_acquisition
         camera_img_save
         stereo_tools
         rescale
+        multicam_save
         DESTINATION lib/${PROJECT_NAME}
 )
 

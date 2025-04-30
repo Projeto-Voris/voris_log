@@ -12,13 +12,12 @@ def generate_launch_description():
     os.makedirs('/home/{}/Pictures/image_logs/SM2'.format(user), exist_ok=True)
     os.makedirs('/home/{}/Pictures/image_logs/SM3'.format(user), exist_ok=True)
     os.makedirs('/home/{}/Pictures/image_logs/SM4'.format(user), exist_ok=True)
-    os.makedirs('/home/{}/Pictures/image_logs/MULTI'.format(user), exist_ok=True)
 
     return LaunchDescription([
         # Declare the launch argument for 'SM'
         DeclareLaunchArgument(
             'SM',
-            default_value='MULTI',
+            default_value='SM2',
             description='This is the sm argument'
         ),
 
@@ -33,23 +32,37 @@ def generate_launch_description():
             description='Path to save images'
         ),
 
+        # Declare launch arguments to allow remapping of image topics
+        DeclareLaunchArgument(
+            'camera_1_image_topic',
+            default_value=PathJoinSubstitution([
+                TextSubstitution(text='/'),
+                LaunchConfiguration('SM'),
+                TextSubstitution(text='left/image_raw')]),
+
+            description='Topic for camera 1 image stream'
+        ),
+        DeclareLaunchArgument(
+            'camera_2_image_topic',
+            default_value=PathJoinSubstitution([
+                TextSubstitution(text='/'),
+                LaunchConfiguration('SM'),
+                TextSubstitution(text='right/image_raw')]),
+            description='Topic for camera 2 image stream'
+        ),
 
         # Node definition
         Node(
             package='voris_log',
-            executable='multicam_save',
+            executable='save_dt_images',
             namespace=LaunchConfiguration('SM'),
-            name='multicam_save',
+            name='save_dt_images',
             output='screen',
-            parameters=[{'saving_path': LaunchConfiguration('saving_path')}],
+            parameters=[{'saving_path': LaunchConfiguration('saving_path')},
+                        {'save_rate': 5}],
             remappings=[
-                ('/stereo1/camera_1/image_raw', '/SM2/left/image_raw'),
-                ('/stereo1/camera_2/image_raw', '/SM2/right/image_raw'),
-                ('/stereo2/camera_1/image_raw', '/SM3/left/image_raw'),
-                ('/stereo2/camera_2/image_raw', '/SM3/right/image_raw'),
-                ('/save_images', PathJoinSubstitution([TextSubstitution(text='/'),
-                                                       LaunchConfiguration('SM'),
-                                                       TextSubstitution(text='save_image')]))
+                ('/camera_1/image_raw', LaunchConfiguration('camera_1_image_topic')),
+                ('/camera_2/image_raw', LaunchConfiguration('camera_2_image_topic')),
             ]
         )
     ])
