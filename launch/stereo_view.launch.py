@@ -39,6 +39,11 @@ def generate_launch_description():
             default_value= 'false',
             description='Enable or disable the image window'
         ),
+        DeclareLaunchArgument(
+            'rectificate_image',
+            default_value= 'false',
+            description='Enable or disable rectification of image'
+        ),
 
         # Node definition
         Node(
@@ -53,7 +58,8 @@ def generate_launch_description():
             ],
             parameters=[
                 {
-                    'show_window': LaunchConfiguration('show_window')  # Pass the argument value to the node
+                    'show_window': LaunchConfiguration('show_window'),  # Pass the argument value to the node
+                    'rectificate_image': LaunchConfiguration('rectificate_image')
                 }
             ]
         )
