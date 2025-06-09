@@ -27,9 +27,12 @@ public:
         
 
         // Initialize subscribers
-        left_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image>>(this, "/SM2/left/image_raw");
-        right_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image>>(this, "/SM2/right/image_raw");
+        left_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image> >(this, "/camera_1/image_raw");
+        right_sub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image> >(this, "/camera_2/image_raw");
 
+
+        left_rect_pub = this->create_publisher<sensor_msgs::msg::Image>("/camera_1/image_rect", 10);
+        right_rect_pub = this->create_publisher<sensor_msgs::msg::Image>("/camera_2/image_rect", 10);
 
         // Initialize synchronizer with ApproximateTime policy
         sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicy>>(
@@ -62,14 +65,6 @@ private:
             left_image = cv_bridge::toCvCopy(left_msg, left_msg->encoding)->image;
             right_image = cv_bridge::toCvCopy(right_msg, right_msg->encoding)->image;
 
-            
-            
-            
-                
-            
-
-            
-
             // cv::cvtColor(left_image, left_image, cv::COLOR_BayerBG2BGR);
             // cv::cvtColor(right_image, right_image, cv::COLOR_BayerBG2BGR);
             if (left_image.empty() || right_image.empty()) {
@@ -83,6 +78,13 @@ private:
                 return;
             }
             RectfyimgCallback(left_image,right_image);
+
+            if(rectificate_){
+                auto left_rectified_msg = cv_bridge::CvImage(left_msg->header, left_msg->encoding, left_image_rectified).toImageMsg();
+                auto right_rectified_msg = cv_bridge::CvImage(right_msg->header, right_msg->encoding, right_image_rectified).toImageMsg();
+                left_rect_pub->publish(*left_rectified_msg);
+                right_rect_pub->publish(*right_rectified_msg);
+            }
 
             RCLCPP_INFO(this->get_logger(), "GOT images");
             // Concatenate the images horizontally
@@ -193,13 +195,15 @@ private:
         cv::remap(img_right,right_image_rectified,map1_right,map2_right, cv::INTER_LINEAR);
         left_image = left_image_rectified;
         right_image = right_image_rectified;
-        
+
 
         }
     }
 
     std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image>> left_sub_;
     std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::Image>> right_sub_;
+    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr left_rect_pub;
+    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr right_rect_pub;
     std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
     rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr service_show_window;
     rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr service_rectificate_image;

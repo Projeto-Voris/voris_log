@@ -13,26 +13,10 @@ def generate_launch_description():
             description='This is the sm argument'
         ),
 
-        # Declare the launch arguments for the camera topics
-        DeclareLaunchArgument(
-            'camera_1_image_topic',
-            default_value=PathJoinSubstitution([
-                TextSubstitution(text='/'),
-                LaunchConfiguration('SM'),
-                TextSubstitution(text='left/image_raw')
-            ]),
-            description='Topic for camera 1 image stream'
-        ),
-        DeclareLaunchArgument(
-            'camera_2_image_topic',
-            default_value=PathJoinSubstitution([
-                TextSubstitution(text='/'),
-                LaunchConfiguration('SM'),
-                TextSubstitution(text='right/image_raw')
-            ]),
-            description='Topic for camera 2 image stream'
-        ),
-
+        DeclareLaunchArgument('left_image', default_value=['left/image_raw'], description='stereo left image'),
+        DeclareLaunchArgument('right_image', default_value=['right/image_raw'], description='stereo right image'),
+        DeclareLaunchArgument('left_info', default_value=['left/camera_info'], description='left camera info'),
+        DeclareLaunchArgument('right_info', default_value=['right/camera_info'], description='right camera info'),
         # Declare the launch argument for enabling the window
         DeclareLaunchArgument(
             'show_window',
@@ -51,10 +35,16 @@ def generate_launch_description():
             executable='stereo_view',
             namespace=LaunchConfiguration('SM'),
             name='stereo_view',
+            arguments=[
+                PathJoinSubstitution(['/', LaunchConfiguration('SM'),LaunchConfiguration('left_info')]),
+                PathJoinSubstitution(['/', LaunchConfiguration('SM'),LaunchConfiguration('right_info')])
+                ],
             output='screen',
             remappings=[
-                ('/camera_1/image_raw', LaunchConfiguration('camera_1_image_topic')),
-                ('/camera_2/image_raw', LaunchConfiguration('camera_2_image_topic'))
+                ('/camera_1/image_raw', LaunchConfiguration('left_image')),
+                ('/camera_2/image_raw', LaunchConfiguration('right_image')),
+                ('/camera_1/image_rect', [LaunchConfiguration('left_image'), TextSubstitution(text='_rect')]),
+                ('/camera_2/image_rect', [LaunchConfiguration('right_image'), TextSubstitution(text='_rect')]),
             ],
             parameters=[
                 {
