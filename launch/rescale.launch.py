@@ -15,9 +15,11 @@ def generate_launch_description():
             output='screen',               # Print output to the screen
             remappings=[
                 # Remap the subscriber topic
-                ('image_in','/SM2/left/image_raw'),
+                ('image_in','/SM2/left/image_rect'),
+                ('camera_info_in','/SM2/left/camera_info'),
                 # Remap the publisher topic
-                ('image_out','/SM2/left/image_rescaled')
+                ('image_out','/teste/left/image_raw'),
+                ('camera_info_out','/teste/left/camera_info')
             ]
 
         ),
@@ -29,9 +31,11 @@ def generate_launch_description():
             output='screen',               # Print output to the screen
             remappings=[
                 # Remap the subscriber topic
-                ('image_in','/SM2/right/image_raw'),
+                ('image_in','/SM2/right/image_rect'),
+                ('camera_info_in','/SM2/right/camera_info'),
                 # Remap the publisher topic
-                ('image_out','/SM2/right/image_rescaled')
+                ('image_out','/teste/right/image_raw'),
+                ('camera_info_out','/teste/right/camera_info')
             ]
             )
     ])
