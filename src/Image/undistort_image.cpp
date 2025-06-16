@@ -30,6 +30,10 @@ private:
             got_camera_info_ = true;
             RCLCPP_INFO(this->get_logger(), "Received camera info.");
         }
+        msg->d.assign(msg->d.size(), 0.0);
+        msg->r = {1.0, 0.0, 0.0,
+              0.0, 1.0, 0.0,
+              0.0, 0.0, 1.0};
         camera_info_pub->publish(*msg);
 
     }
@@ -42,17 +46,20 @@ private:
         }
 
         cv_bridge::CvImagePtr cv_ptr;
+        cv::Mat bgr_img;
         try {
             cv_ptr = cv_bridge::toCvCopy(msg, msg->encoding);
+            // If you want to convert Bayer to BGR, uncomment and use the following line:
+            cv::cvtColor(cv_ptr->image, bgr_img, cv::COLOR_BayerRG2BGR);
         } catch (cv_bridge::Exception& e) {
             RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
             return;
         }
 
         cv::Mat rectified;
-        cv::undistort(cv_ptr->image, rectified, camera_matrix_, dist_coeffs_);
+        cv::undistort(bgr_img, rectified, camera_matrix_, dist_coeffs_);
 
-        auto out_msg = cv_bridge::CvImage(msg->header, sensor_msgs::image_encodings::RGB8, rectified).toImageMsg();
+        auto out_msg = cv_bridge::CvImage(msg->header, sensor_msgs::image_encodings::BGR8, rectified).toImageMsg();
         image_pub_->publish(*out_msg);
 
     }

@@ -103,9 +103,13 @@ target_include_directories(stereo_tools PRIVATE include)
 ament_target_dependencies(stereo_tools image_transport cv_bridge message_filters rclcpp sensor_msgs)
 target_link_libraries(stereo_tools ${OpenCV_LIBS} "${cpp_typesupport_target}")
 
-add_executable(image_rect src/Image/rectify_image.cpp )
-ament_target_dependencies(image_rect image_transport cv_bridge rclcpp sensor_msgs)
-target_link_libraries(image_rect ${OpenCV_LIBS} "${cpp_typesupport_target}")
+add_executable(undistort_img src/Image/undistort_image.cpp )
+ament_target_dependencies(undistort_img image_transport cv_bridge rclcpp sensor_msgs)
+target_link_libraries(undistort_img ${OpenCV_LIBS} "${cpp_typesupport_target}")
+
+add_executable(stereo_rectify src/Image/stereo_rectify.cpp)
+ament_target_dependencies(stereo_rectify image_transport cv_bridge rclcpp sensor_msgs message_filters)
+target_link_libraries(stereo_rectify ${OpenCV_LIBS} "${cpp_typesupport_target}")
 
 install(TARGETS
         pose_log
@@ -119,7 +123,8 @@ install(TARGETS
         stereo_tools
         rescale
         multicam_save
-        image_rect
+        undistort_img
+        stereo_rectify
         DESTINATION lib/${PROJECT_NAME}
 )
 

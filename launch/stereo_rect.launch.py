@@ -12,7 +12,7 @@ def generate_launch_description():
                 description='Namespace for the stereo cameras'    ) ,
         Node(
             package='voris_log',
-            executable='image_rect',
+            executable='undistort_img',
             name='left_rectify',
             namespace=PathJoinSubstitution([LaunchConfiguration('namespace'), 'left']),
             remappings=[
@@ -24,7 +24,7 @@ def generate_launch_description():
         ),
         Node(
             package='voris_log',
-            executable='image_rect',
+            executable='undistort_img',
             name='right_rectify',
             namespace=PathJoinSubstitution([LaunchConfiguration('namespace'), 'right']),
             remappings=[
