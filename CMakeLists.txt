@@ -139,6 +139,7 @@ install(
         scripts/noise_image.py
         scripts/point_cloud_las.py
         scripts/point_cloud_csv.py
+        scripts/mp4_converter.py
         DESTINATION lib/${PROJECT_NAME}
 )
 
