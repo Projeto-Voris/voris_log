@@ -129,7 +129,7 @@ private:
         info_l_msg.header.stamp = time;
         info_r_msg.header.stamp = time;
         left_camera_info_pub_->publish(info_l_msg);
-        right_camera_info_pub_->publish(info_l_msg);
+        right_camera_info_pub_->publish(info_r_msg);
 
         return true;
     }
