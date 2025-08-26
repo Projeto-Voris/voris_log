@@ -140,6 +140,7 @@ install(
         scripts/point_cloud_las.py
         scripts/point_cloud_csv.py
         scripts/mp4_converter.py
+        scripts/camerainfo_publisher.py
         DESTINATION lib/${PROJECT_NAME}
 )
 
