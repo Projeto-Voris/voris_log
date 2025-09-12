@@ -12,17 +12,19 @@ class CameraInfoPublisher(Node):
 
         qos_profile = QoSProfile(depth=1)
         qos_profile.durability = QoSDurabilityPolicy.TRANSIENT_LOCAL
-
-        self.publisher_left = self.create_publisher(CameraInfo, '/SM2/left/camera_info', qos_profile)
-        self.publisher_right = self.create_publisher(CameraInfo, '/SM2/right/camera_info', qos_profile)
+        self.declare_parameter('left_frameID', '/SM2/left_camera_link')
+        self.declare_parameter('right_frameID', '/SM2/left_camera_link')
+        self.publisher_left = self.create_publisher(CameraInfo, 'left/camera_info', qos_profile)
+        self.publisher_right = self.create_publisher(CameraInfo, 'right/camera_info', qos_profile)
 
         self.cam_info_left = self.load_yaml(yaml_file_left)
-        self.cam_info_left.header.frame_id = "/SM2/left_camera_link"
+        self.cam_info_left.header.frame_id = self.get_parameter('left_frameID').value
 
         self.cam_info_right = self.load_yaml(yaml_file_right)
-        self.cam_info_right.header.frame_id = "/SM2/right_camera_link"
+        self.cam_info_right.header.frame_id = self.get_parameter('right_frameID').value
 
         # Publish at 1 Hz (adjust as needed)
+        self.get_logger().info('Publishing camera info')
         self.timer = self.create_timer(1.0, self.publish_camera_info)
 
     def publish_camera_info(self):
