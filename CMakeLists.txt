@@ -111,6 +111,10 @@ add_executable(stereo_rectify src/Image/stereo_rectify.cpp)
 ament_target_dependencies(stereo_rectify image_transport cv_bridge rclcpp sensor_msgs message_filters)
 target_link_libraries(stereo_rectify ${OpenCV_LIBS} "${cpp_typesupport_target}")
 
+add_executable(compressed2raw src/Image/compressed2raw.cpp)
+ament_target_dependencies(compressed2raw rclcpp sensor_msgs cv_bridge OpenCV)
+target_link_libraries(compressed2raw ${OpenCV_LIBS} "${cpp_typesupport_target}")
+
 install(TARGETS
         pose_log
         posestamped_cb
@@ -125,6 +129,7 @@ install(TARGETS
         multicam_save
         undistort_img
         stereo_rectify
+        compressed2raw
         DESTINATION lib/${PROJECT_NAME}
 )
 
