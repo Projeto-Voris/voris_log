@@ -50,50 +50,53 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 rosidl_get_typesupport_target(cpp_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_cpp")
 
 
-add_executable(pose_log src/message_filter/pose_node.cpp src/message_filter/pose_register.cpp)
+add_executable(pose_log src/data/pose_node.cpp src/data/pose_register.cpp)
 target_include_directories(pose_log PRIVATE include)
 ament_target_dependencies(pose_log geometry_msgs message_filters rclcpp)
 
 
-add_executable(posestamped_cb src/PoseStamped/posestamped_cb.cpp)
+add_executable(posestamped_cb src/data/posestamped_cb.cpp)
 ament_target_dependencies(posestamped_cb geometry_msgs rclcpp)
 
-add_executable(posearray_cb src/PoseArray/posearray_cb.cpp)
+add_executable(odom_node src/data/odom_node.cpp)
+ament_target_dependencies(odom_node geometry_msgs nav_msgs rclcpp)
+
+add_executable(posearray_cb src/data/posearray_cb.cpp)
 ament_target_dependencies(posearray_cb geometry_msgs rclcpp)
 
 
-add_executable(stereo_save src/Image/stereo_img_save.cpp )
+add_executable(stereo_save src/image/stereo_img_save.cpp )
 target_include_directories(stereo_save PRIVATE include)
 ament_target_dependencies(stereo_save image_transport cv_bridge message_filters rclcpp sensor_msgs)
 target_link_libraries(stereo_save ${OpenCV_LIBS} "${cpp_typesupport_target}")
 
-add_executable(save_dt_images src/Image/save_images_dt.cpp )
+add_executable(save_dt_images src/image/save_images_dt.cpp )
 target_include_directories(save_dt_images PRIVATE include)
 ament_target_dependencies(save_dt_images image_transport cv_bridge message_filters rclcpp sensor_msgs)
 target_link_libraries(save_dt_images ${OpenCV_LIBS} "${cpp_typesupport_target}")
 
-add_executable(multicam_save src/Image/multicam_save.cpp )
+add_executable(multicam_save src/image/multicam_save.cpp )
 target_include_directories(multicam_save PRIVATE include)
 ament_target_dependencies(multicam_save image_transport cv_bridge message_filters rclcpp sensor_msgs)
 target_link_libraries(multicam_save ${OpenCV_LIBS} "${cpp_typesupport_target}")
 
-add_executable(rescale src/Image/rescale.cpp )
+add_executable(rescale src/image/rescale.cpp )
 target_include_directories(rescale PRIVATE include)
 ament_target_dependencies(rescale image_transport cv_bridge message_filters rclcpp sensor_msgs)
 target_link_libraries(rescale ${OpenCV_LIBS})
 
 
-add_executable(camera_img_save src/Image/single_image_save.cpp )
+add_executable(camera_img_save src/image/single_image_save.cpp )
 target_include_directories(camera_img_save PRIVATE include)
 ament_target_dependencies(camera_img_save image_transport cv_bridge rclcpp sensor_msgs)
 target_link_libraries(camera_img_save ${OpenCV_LIBS} "${cpp_typesupport_target}")
 
-add_executable(stereo_view src/Image/stereo_image_view.cpp )
+add_executable(stereo_view src/image/stereo_image_view.cpp )
 target_include_directories(stereo_view PRIVATE include)
 ament_target_dependencies(stereo_view image_transport cv_bridge message_filters rclcpp sensor_msgs std_srvs)
 target_link_libraries(stereo_view ${OpenCV_LIBS} "${cpp_typesupport_target}")
 
-add_executable(images_acquisition src/handle_node/image_acquisition.cpp )
+add_executable(images_acquisition src/image/image_acquisition.cpp )
 target_include_directories(images_acquisition PRIVATE include)
 ament_target_dependencies(images_acquisition message_filters rclcpp std_srvs)
 target_link_libraries(images_acquisition "${cpp_typesupport_target}")
@@ -103,15 +106,15 @@ target_include_directories(stereo_tools PRIVATE include)
 ament_target_dependencies(stereo_tools image_transport cv_bridge message_filters rclcpp sensor_msgs)
 target_link_libraries(stereo_tools ${OpenCV_LIBS} "${cpp_typesupport_target}")
 
-add_executable(undistort_img src/Image/undistort_image.cpp )
+add_executable(undistort_img src/image/undistort_image.cpp )
 ament_target_dependencies(undistort_img image_transport cv_bridge rclcpp sensor_msgs)
 target_link_libraries(undistort_img ${OpenCV_LIBS} "${cpp_typesupport_target}")
 
-add_executable(stereo_rectify src/Image/stereo_rectify.cpp)
+add_executable(stereo_rectify src/image/stereo_rectify.cpp)
 ament_target_dependencies(stereo_rectify image_transport cv_bridge rclcpp sensor_msgs message_filters)
 target_link_libraries(stereo_rectify ${OpenCV_LIBS} "${cpp_typesupport_target}")
 
-add_executable(compressed2raw src/Image/compressed2raw.cpp)
+add_executable(compressed2raw src/image/compressed2raw.cpp)
 ament_target_dependencies(compressed2raw rclcpp sensor_msgs cv_bridge OpenCV)
 target_link_libraries(compressed2raw ${OpenCV_LIBS} "${cpp_typesupport_target}")
 
@@ -119,6 +122,7 @@ install(TARGETS
         pose_log
         posestamped_cb
         posearray_cb
+        odom_node
         stereo_save
         stereo_view
         save_dt_images
