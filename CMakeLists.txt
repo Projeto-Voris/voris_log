@@ -118,6 +118,31 @@ add_executable(compressed2raw src/image/compressed2raw.cpp)
 ament_target_dependencies(compressed2raw rclcpp sensor_msgs cv_bridge OpenCV)
 target_link_libraries(compressed2raw ${OpenCV_LIBS} "${cpp_typesupport_target}")
 
+
+add_library(image_processor_component SHARED src/image/image_processor.cpp)
+ament_target_dependencies(image_processor_component
+  rclcpp
+  rclcpp_components
+  sensor_msgs
+  image_transport
+  cv_bridge
+  OpenCV
+)
+
+# Registra o plugin
+rclcpp_components_register_node(image_processor_component
+  PLUGIN "voris_log::ImageProcessorNode"
+  EXECUTABLE image_processor_node
+)
+
+# Instala (Coloque junto com seus outros installs)
+install(TARGETS image_processor_component
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+
 install(TARGETS
         pose_log
         posestamped_cb
