@@ -1,6 +1,6 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/image.hpp>
-#include <image_transport/image_transport.hpp>
+#include <sensor_msgs/msg/compressed_image.hpp> // <--- Importante
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/opencv.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
@@ -11,71 +11,78 @@ namespace voris_log
 class ImageProcessorNode : public rclcpp::Node
 {
 public:
-  // Construtor compatível com Composable Node
   explicit ImageProcessorNode(const rclcpp::NodeOptions & options)
   : rclcpp::Node("image_processor", options)
   {
-    // Parâmetros de redimensionamento
+    // Parâmetros
     this->declare_parameter<int>("resize_width", 640);
     this->declare_parameter<int>("resize_height", 480);
-    // Nota: A qualidade JPEG é gerida pelo parametro do plugin do image_transport
-    // ex: _jpeg_quality:=50 no launch
+    this->declare_parameter<int>("jpeg_quality", 80); // Controle manual da qualidade
 
-    // 1. Subscriber Padrão (Melhor para Zero-Copy com Spinnaker)
-    // Usamos SensorDataQoS para garantir compatibilidade com drivers de câmera (Best Effort)
+    // 1. Subscriber (Entrada Raw)
+    // Mantemos sensor_msgs::msg::Image na entrada para pegar do driver
     sub_ = this->create_subscription<sensor_msgs::msg::Image>(
       "input/image", 
-      rclcpp::SensorDataQoS(), 
+      rclcpp::SensorDataQoS(), // QoS Best Effort (bom para câmeras)
       std::bind(&ImageProcessorNode::imageCallback, this, std::placeholders::_1));
 
-    // 2. Publisher via ImageTransport
-    // Isso cria automaticamente os tópicos "output/image", "output/image/compressed", etc.
-    // Usamos a função estática create_publisher que aceita o ponteiro 'this' cru
-    pub_ = image_transport::create_publisher(this, "output/image");
+    // 2. Publisher (Saída SOMENTE Comprimida)
+    // Mudamos para CompressedImage direto
+    pub_ = this->create_publisher<sensor_msgs::msg::CompressedImage>("output/compressed_image", 10);
 
-    RCLCPP_INFO(this->get_logger(), "Image Processor (Resizer) iniciado.");
+    RCLCPP_INFO(this->get_logger(), "Image Processor (JPEG Output Only) iniciado.");
   }
 
 private:
   void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr msg)
   {
     try {
-      // Zero-Copy check: Se estivermos no mesmo processo, isso é apenas um ponteiro
-      // Mas para OpenCV precisamos de acesso aos dados. toCvShare é eficiente.
-      cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, msg->encoding);
+      // 1. Conversão para BGR8
+      // O driver da Spinnaker geralmente manda BayerRG8. 
+      // O JPEG precisa de cor (BGR) ou Mono. "bgr8" força a conversão correta.
+      // Se já vier BGR, ele só repassa o ponteiro (zero-copy-ish).
+      cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, "bgr8");
 
       int target_width = this->get_parameter("resize_width").as_int();
       int target_height = this->get_parameter("resize_height").as_int();
+      int jpeg_quality = this->get_parameter("jpeg_quality").as_int();
 
-      // Se a imagem já for pequena, não faz nada
-      if (cv_ptr->image.cols <= target_width && cv_ptr->image.rows <= target_height) {
-         pub_.publish(msg);
-         return;
+      // 2. Redimensionamento
+      cv::Mat processed_img;
+      // Se a imagem for maior que o alvo, redimensiona. Caso contrário, usa a original.
+      if (cv_ptr->image.cols > target_width || cv_ptr->image.rows > target_height) {
+          cv::resize(cv_ptr->image, processed_img, cv::Size(target_width, target_height), 0, 0, cv::INTER_LINEAR);
+      } else {
+          processed_img = cv_ptr->image;
       }
 
-      // Redimensiona
-      cv::Mat resized;
-      cv::resize(cv_ptr->image, resized, cv::Size(target_width, target_height), 0, 0, cv::INTER_LINEAR);
+      // 3. Compressão Manual (JPEG)
+      std::vector<uchar> buffer;
+      std::vector<int> compression_params = {cv::IMWRITE_JPEG_QUALITY, jpeg_quality};
+      
+      // Codifica a matriz para o buffer de bytes
+      cv::imencode(".jpg", processed_img, buffer, compression_params);
 
-      // Publica
-      // Criamos um novo CvImage. O header mantém o timestamp original para sincronia!
-      cv_bridge::CvImage out_msg;
-      out_msg.header = msg->header; 
-      out_msg.encoding = msg->encoding; // Mantém a codificação (ex: bayer_rg8 ou bgr8)
-      out_msg.image = resized;
+      // 4. Montagem da Mensagem CompressedImage
+      sensor_msgs::msg::CompressedImage out_msg;
+      out_msg.header = msg->header; // Mantém timestamp e frame_id originais
+      out_msg.format = "jpeg";
+      out_msg.data = buffer; // Move o buffer para a mensagem
 
-      pub_.publish(out_msg.toImageMsg());
+      // Publica somente o comprimido
+      pub_->publish(out_msg);
 
     } catch (cv_bridge::Exception & e) {
       RCLCPP_ERROR(this->get_logger(), "Erro no cv_bridge: %s", e.what());
+    } catch (cv::Exception & e) {
+      RCLCPP_ERROR(this->get_logger(), "Erro no OpenCV: %s", e.what());
     }
   }
 
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr sub_;
-  image_transport::Publisher pub_;
+  rclcpp::Publisher<sensor_msgs::msg::CompressedImage>::SharedPtr pub_; // Tipo alterado
 };
 
 }  // namespace voris_log
 
-// Registro do Componente
 RCLCPP_COMPONENTS_REGISTER_NODE(voris_log::ImageProcessorNode)
