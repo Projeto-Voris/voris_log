@@ -41,7 +41,7 @@ private:
       // O driver da Spinnaker geralmente manda BayerRG8. 
       // O JPEG precisa de cor (BGR) ou Mono. "bgr8" força a conversão correta.
       // Se já vier BGR, ele só repassa o ponteiro (zero-copy-ish).
-      cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, "bgr8");
+      cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, msg->encoding);
 
       int target_width = this->get_parameter("resize_width").as_int();
       int target_height = this->get_parameter("resize_height").as_int();
