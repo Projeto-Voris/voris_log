@@ -12,12 +12,13 @@ def generate_launch_description():
     os.makedirs('/home/{}/Pictures/image_logs/SM2'.format(user), exist_ok=True)
     os.makedirs('/home/{}/Pictures/image_logs/SM3'.format(user), exist_ok=True)
     os.makedirs('/home/{}/Pictures/image_logs/SM4'.format(user), exist_ok=True)
+    os.makedirs('/home/{}/Pictures/image_logs/Passive'.format(user), exist_ok=True)
 
     return LaunchDescription([
         # Declare the launch argument for 'SM'
         DeclareLaunchArgument(
             'SM',
-            default_value='SM3',
+            default_value='Passive',
             description='This is the sm argument'
         ),
 

@@ -21,6 +21,7 @@ find_package(ament_cmake REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -31,6 +32,9 @@ find_package(image_transport REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(pcl_conversions REQUIRED)
+find_package(PCL REQUIRED COMPONENTS common io)
+
 include_directories(include)
 
 
@@ -119,6 +123,7 @@ ament_target_dependencies(compressed2raw rclcpp sensor_msgs cv_bridge OpenCV)
 target_link_libraries(compressed2raw ${OpenCV_LIBS} "${cpp_typesupport_target}")
 
 
+
 add_library(image_processor_component SHARED src/image/image_processor.cpp)
 ament_target_dependencies(image_processor_component
   rclcpp
@@ -135,8 +140,32 @@ rclcpp_components_register_node(image_processor_component
   EXECUTABLE image_processor_node
 )
 
+add_library(stereo_sonar_component SHARED src/image/stereo_sonar.cpp)
+target_include_directories(stereo_sonar_component PRIVATE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  ${OpenCV_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
+)
+target_link_libraries(stereo_sonar_component
+  ${OpenCV_LIBS}
+  ${PCL_LIBRARIES}
+)
+ament_target_dependencies(stereo_sonar_component
+  rclcpp
+  rclcpp_components
+  sensor_msgs
+  message_filters
+  cv_bridge
+  pcl_conversions
+)
+
+rclcpp_components_register_node(stereo_sonar_component
+  PLUGIN "voris_log::DataSaverNode"
+  EXECUTABLE stereo_sonar_node
+)
+
 # Instala (Coloque junto com seus outros installs)
-install(TARGETS image_processor_component
+install(TARGETS image_processor_component stereo_sonar_component
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
