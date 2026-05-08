@@ -204,6 +204,8 @@ install(
         scripts/point_cloud_csv.py
         scripts/mp4_converter.py
         scripts/camerainfo_publisher.py
+        scripts/sim_keyboard_control.py
+
         DESTINATION lib/${PROJECT_NAME}
 )
 
