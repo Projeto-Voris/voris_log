@@ -1,43 +1,52 @@
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/string.hpp"
+#include "rclcpp_components/register_node_macro.hpp"
+#include "geometry_msgs/msg/twist_with_covariance.hpp"
+#include "marine_acoustic_msgs/msg/dvl.hpp"
 
-namespace dvl_composable_node
+namespace dvl_log
 {
+
 class DVLNode : public rclcpp::Node
 {
 public:
-  explicit DVLNode(const rclcpp::NodeOptions & options)
-  : Node("dvl_msg_converter", options)
+  explicit DVLNode(const rclcpp::NodeOptions & options) : rclcpp::Node("dvl_msg_converter", options)
+  
   {
-    
-    publisher_dvl_filtered = this->create_publisher<std_msgs::msg::String>("topico_saida", 10);
-    
-    subscriber_dvl_sim = this->create_subscription<std_msgs::msg::String>("topico_entrada",
-                                                                         10, 
-                                                                         std::bind(&NoProcessador::on_message_received, 
-                                                                         this, std::placeholders::_1));
-    
+    // Instancia o publisher com o tipo correto
+    publisher_dvl_filtered = this->create_publisher<geometry_msgs::msg::TwistWithCovariance>(
+      "dvl_twist", 10);
+
+    // Instancia o subscriber com o tipo e callback corretos
+    subscriber_dvl_sim = this->create_subscription<marine_acoustic_msgs::msg::Dvl>(
+      "/model/bluerov2/dvl/velocity", 10,
+      std::bind(&DVLNode::on_message_received, this, std::placeholders::_1));
   }
 
 private:
-  // 3. O Callback: Executado toda vez que chegar uma mensagem no 'topico_entrada'
-  void on_message_received(const std_msgs::msg::String::SharedPtr msg)
+  void on_message_received(const marine_acoustic_msgs::msg::Dvl::SharedPtr msg)
   {
-    RCLCPP_INFO(this->get_logger(), "Recebido: '%s'", msg->data.c_str());
+    RCLCPP_INFO(this->get_logger(), "Recebido DVL. Convertendo para Twist...");
 
-    // Processa o dado recebido
-    auto nova_mensagem = std_msgs::msg::String();
-    nova_mensagem.data = "Processado: " + msg->data;
+    auto nova_mensagem = geometry_msgs::msg::TwistWithCovariance();
+    
+    // Copia as velocidades lineares do DVL
+    nova_mensagem.twist.linear.x = msg->velocity.x;
+    nova_mensagem.twist.linear.y = msg->velocity.y;
+    nova_mensagem.twist.linear.z = msg->velocity.z;
 
-    // Publica o resultado no tópico de saída
-    RCLCPP_INFO(this->get_logger(), "Publicando: '%s'", nova_mensagem.data.c_str());
+    // Zera as velocidades angulares (faltavam ponto e vírgula no original)
+    nova_mensagem.twist.angular.x = 0.0;
+    nova_mensagem.twist.angular.y = 0.0;
+    nova_mensagem.twist.angular.z = 0.0;
+
+    RCLCPP_INFO(this->get_logger(), "Publicando Twist Filtrada");
     publisher_dvl_filtered->publish(nova_mensagem);
   }
 
-  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscriber_dvl_sim;
-  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher_dvl_filtered;
+    rclcpp::Subscription<marine_acoustic_msgs::msg::Dvl>::SharedPtr subscriber_dvl_sim;
+  rclcpp::Publisher<geometry_msgs::msg::TwistWithCovariance>::SharedPtr publisher_dvl_filtered;
 };
-} // namespace meu_projeto_composicao
 
-#include "rclcpp_components/register_node_macro.hpp"
-RCLCPP_COMPONENTS_REGISTER_NODE(dvl_composable_node::DVLNode)
+}
+
+RCLCPP_COMPONENTS_REGISTER_NODE(dvl_log::DVLNode)
