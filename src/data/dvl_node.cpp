@@ -34,10 +34,32 @@ private:
     nova_mensagem.twist.linear.y = msg->velocity.y;
     nova_mensagem.twist.linear.z = msg->velocity.z;
 
-    // Zera as velocidades angulares (faltavam ponto e vírgula no original)
+    // Zera as velocidades angulares 
     nova_mensagem.twist.angular.x = 0.0;
     nova_mensagem.twist.angular.y = 0.0;
     nova_mensagem.twist.angular.z = 0.0;
+
+    nova_mensagem.covariance.fill(0.0);
+
+    // Preenche os dados de covariancia --> pequenas alterações pois o formato das mensagens não é compatível 
+    nova_mensagem.covariance[0]  = msg->velocity_covar[0];
+    nova_mensagem.covariance[1]  = msg->velocity_covar[1];
+    nova_mensagem.covariance[2]  = msg->velocity_covar[2];
+
+    // Linha 2
+    nova_mensagem.covariance[6]  = msg->velocity_covar[3];
+    nova_mensagem.covariance[7]  = msg->velocity_covar[4];
+    nova_mensagem.covariance[8]  = msg->velocity_covar[5];
+
+    // Linha 3
+    nova_mensagem.covariance[12] = msg->velocity_covar[6];
+    nova_mensagem.covariance[13] = msg->velocity_covar[7];
+    nova_mensagem.covariance[14] = msg->velocity_covar[8];
+
+    double high_uncertainty = 1e6;
+    nova_mensagem.covariance[21] = high_uncertainty; 
+    nova_mensagem.covariance[28] = high_uncertainty; 
+    nova_mensagem.covariance[35] = high_uncertainty;  
 
     RCLCPP_INFO(this->get_logger(), "Publicando Twist Filtrada");
     publisher_dvl_filtered->publish(nova_mensagem);
