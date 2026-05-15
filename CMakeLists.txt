@@ -3,10 +3,7 @@ project(voris_log)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules)
 
-# You should set the PYTHONPATH to your own python site-packages path
-#set(ENV{PYTHONPATH} "/opt/ros/humble/lib/python3.10/site-packages/")
-
-# Default to C++14
+# Default to C++17
 if (NOT CMAKE_CXX_STANDARD)
     set(CMAKE_CXX_STANDARD 17)
 endif ()
@@ -34,6 +31,8 @@ find_package(rclpy REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(PCL REQUIRED COMPONENTS common io)
+# Encontra o pacote de mensagens do DVL
+find_package(marine_acoustic_msgs REQUIRED)
 
 include_directories(include)
 
@@ -47,7 +46,6 @@ endif ()
 
 rosidl_generate_interfaces(${PROJECT_NAME}
     "srv/SaveImages.srv"
-    #"srv/Test.srv"
         DEPENDENCIES builtin_interfaces std_msgs)
 
 
@@ -57,6 +55,8 @@ rosidl_get_typesupport_target(cpp_typesupport_target "${PROJECT_NAME}" "rosidl_t
 add_executable(pose_log src/data/pose_node.cpp src/data/pose_register.cpp)
 target_include_directories(pose_log PRIVATE include)
 ament_target_dependencies(pose_log geometry_msgs message_filters rclcpp)
+
+# REMOVIDO: O bloco "add_executable(dvl_node ...)" manual antigo foi removido daqui para evitar conflitos
 
 
 add_executable(posestamped_cb src/data/posestamped_cb.cpp)
@@ -123,7 +123,6 @@ ament_target_dependencies(compressed2raw rclcpp sensor_msgs cv_bridge OpenCV)
 target_link_libraries(compressed2raw ${OpenCV_LIBS} "${cpp_typesupport_target}")
 
 
-
 add_library(image_processor_component SHARED src/image/image_processor.cpp)
 ament_target_dependencies(image_processor_component
   rclcpp
@@ -134,11 +133,25 @@ ament_target_dependencies(image_processor_component
   OpenCV
 )
 
-# Registra o plugin
 rclcpp_components_register_node(image_processor_component
   PLUGIN "voris_log::ImageProcessorNode"
   EXECUTABLE image_processor_node
 )
+
+# Componente DVL
+add_library(dvl_node_component SHARED src/data/dvl_node.cpp)
+ament_target_dependencies(dvl_node_component
+  rclcpp
+  rclcpp_components
+  geometry_msgs
+  marine_acoustic_msgs
+)
+
+rclcpp_components_register_node(dvl_node_component
+  PLUGIN "dvl_log::DVLNode"
+  EXECUTABLE dvl_node
+)
+
 
 add_library(stereo_sonar_component SHARED src/image/stereo_sonar.cpp)
 target_include_directories(stereo_sonar_component PRIVATE
@@ -164,8 +177,8 @@ rclcpp_components_register_node(stereo_sonar_component
   EXECUTABLE stereo_sonar_node
 )
 
-# Instala (Coloque junto com seus outros installs)
-install(TARGETS image_processor_component stereo_sonar_component
+# CORRIGIDO: Adicionado o "dvl_node_component" na instalação das bibliotecas
+install(TARGETS image_processor_component stereo_sonar_component dvl_node_component
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -174,6 +187,7 @@ install(TARGETS image_processor_component stereo_sonar_component
 
 install(TARGETS
         pose_log
+        # REMOVIDO: "dvl_node" duplicado foi retirado daqui
         posestamped_cb
         posearray_cb
         odom_node
@@ -209,7 +223,7 @@ install(
         DESTINATION lib/${PROJECT_NAME}
 )
 
-ament_export_dependencies(rosidl_default_runtime)
+# export_dependencies(rosidl_default_runtime)
 
 
 if (BUILD_TESTING)
