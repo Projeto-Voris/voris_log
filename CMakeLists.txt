@@ -145,6 +145,8 @@ ament_target_dependencies(dvl_node_component
   rclcpp_components
   geometry_msgs
   marine_acoustic_msgs
+  tf2_geometry_msgs 
+  tf2_ros 
 )
 
 rclcpp_components_register_node(dvl_node_component
