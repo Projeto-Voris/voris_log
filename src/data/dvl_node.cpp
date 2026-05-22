@@ -1,6 +1,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
 #include "geometry_msgs/msg/twist_with_covariance.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
 #include "marine_acoustic_msgs/msg/dvl.hpp"
 
 namespace dvl_log
@@ -12,13 +13,14 @@ public:
   explicit DVLNode(const rclcpp::NodeOptions & options) : rclcpp::Node("dvl_msg_converter", options)
   
   {
-    // Instancia o publisher com o tipo correto
-    publisher_dvl_filtered = this->create_publisher<geometry_msgs::msg::TwistWithCovariance>(
-      "dvl_twist", 10);
+    publisher_dvl_with_covariance = this->create_publisher<geometry_msgs::msg::TwistWithCovariance>(
+      "dvl_twist_with_covariance", 10);
 
-    // Instancia o subscriber com o tipo e callback corretos
+    publisher_dvl_stamped = this->create_publisher<geometry_msgs::msg::TwistStamped>(
+      "dvl_twist_stamped", 10);
+
     subscriber_dvl_sim = this->create_subscription<marine_acoustic_msgs::msg::Dvl>(
-      "/model/bluerov2/dvl/velocity", 10,
+      "/waterlinked_dvl_driver/velocity_report", 10,
       std::bind(&DVLNode::on_message_received, this, std::placeholders::_1));
   }
 
@@ -26,6 +28,8 @@ private:
   void on_message_received(const marine_acoustic_msgs::msg::Dvl::SharedPtr msg)
   {
     RCLCPP_INFO(this->get_logger(), "Recebido DVL. Convertendo para Twist...");
+
+    /*=========================== PUBLICANDO TWIST WITH COVARIANCE =================================*/
 
     auto nova_mensagem = geometry_msgs::msg::TwistWithCovariance();
     
@@ -61,12 +65,35 @@ private:
     nova_mensagem.covariance[28] = high_uncertainty; 
     nova_mensagem.covariance[35] = high_uncertainty;  
 
-    RCLCPP_INFO(this->get_logger(), "Publicando Twist Filtrada");
-    publisher_dvl_filtered->publish(nova_mensagem);
+    RCLCPP_INFO(this->get_logger(), "Publicando Twist With Covariance Filtrada");
+    publisher_dvl_with_covariance->publish(nova_mensagem);
+
+
+
+    /*=========================== PUBLICANDO TWIST STAMPED =================================*/
+
+    auto dvl_stamped = geometry_msgs::msg::TwistStamped();
+
+    dvl_stamped.header.stamp = msg->header.stamp; 
+    dvl_stamped.header.frame_id = "base_link";
+
+    dvl_stamped.twist.linear.x = msg->velocity.x;
+    dvl_stamped.twist.linear.y = msg->velocity.y;
+    dvl_stamped.twist.linear.z = msg->velocity.z;
+
+    dvl_stamped.twist.angular.x = 0.0;
+    dvl_stamped.twist.angular.y = 0.0;
+    dvl_stamped.twist.angular.z = 0.0;
+
+    RCLCPP_INFO(this->get_logger(), "Publicando Twist Stamped Filtrada");
+    publisher_dvl_stamped->publish(dvl_stamped);
+
   }
 
-    rclcpp::Subscription<marine_acoustic_msgs::msg::Dvl>::SharedPtr subscriber_dvl_sim;
-  rclcpp::Publisher<geometry_msgs::msg::TwistWithCovariance>::SharedPtr publisher_dvl_filtered;
+  rclcpp::Subscription<marine_acoustic_msgs::msg::Dvl>::SharedPtr subscriber_dvl_sim;
+  rclcpp::Publisher<geometry_msgs::msg::TwistWithCovariance>::SharedPtr publisher_dvl_with_covariance;
+  rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr publisher_dvl_stamped;
+
 };
 
 }
