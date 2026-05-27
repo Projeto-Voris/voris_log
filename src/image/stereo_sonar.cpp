@@ -3,6 +3,7 @@
 
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
+#include <std_srvs/srv/trigger.hpp>
 
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/approximate_time.h>
@@ -37,6 +38,9 @@ public:
     // Cria o diretório se não existir
     if (!std::filesystem::exists(save_path_)) {
       std::filesystem::create_directories(save_path_);
+      std::filesystem::create_directories(save_path_ + "/left");
+      std::filesystem::create_directories(save_path_ + "/right");
+      std::filesystem::create_directories(save_path_ + "/sonar");
     }
 
     RCLCPP_INFO(this->get_logger(), "Salvando dados no diretório: %s", save_path_.c_str());
@@ -56,6 +60,8 @@ public:
     
     sync_->registerCallback(
       std::bind(&DataSaverNode::syncCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+
+    get_data_srv_ = this->create_service<std_srvs::srv::Trigger>("save_data",  std::bind(&DataSaverNode::get_data_srv, this, std::placeholders::_1, std::placeholders::_2));
   }
 
 private:
@@ -72,16 +78,19 @@ private:
   
   std::shared_ptr<Sync> sync_;
 
+rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr get_data_srv_;
+
   std::string save_path_;
+  bool get_data{false};
   int msg_counter_;
 
   // Callback chamado quando as 3 mensagens estão sincronizadas
-  void syncCallback(
-    const ImageMsg::ConstSharedPtr & msg_img_l,
-    const ImageMsg::ConstSharedPtr & msg_img_r,
-    const Pc2Msg::ConstSharedPtr & msg_pc2)
+  void syncCallback(const ImageMsg::ConstSharedPtr & msg_img_l, const ImageMsg::ConstSharedPtr & msg_img_r, const Pc2Msg::ConstSharedPtr & msg_pc2)
   {
-    RCLCPP_INFO(this->get_logger(), "Saving images and sonar data");
+    if(!get_data){
+      return; 
+    }
+
     // Formata o contador com zeros à esquerda (ex: 000, 001, ..., 999)
     std::ostringstream ss;
     ss << std::setw(3) << std::setfill('0') << msg_counter_;
@@ -90,7 +99,7 @@ private:
     // Salvar a Imagem Esquerda (L###.png)
     try {
       cv::Mat cv_img_l = cv_bridge::toCvShare(msg_img_l, "bgr8")->image;
-      std::string path_l = save_path_ + "/L" + counter_str + ".png";
+      std::string path_l = save_path_ + "/left/L" + counter_str + ".png";
       cv::imwrite(path_l, cv_img_l);
     } catch (cv_bridge::Exception & e) {
       RCLCPP_ERROR(this->get_logger(), "Erro no cv_bridge (Esquerda): %s", e.what());
@@ -99,7 +108,7 @@ private:
     // Salvar a Imagem Direita (R###.png)
     try {
       cv::Mat cv_img_r = cv_bridge::toCvShare(msg_img_r, "bgr8")->image;
-      std::string path_r = save_path_ + "/R" + counter_str + ".png";
+      std::string path_r = save_path_ + "/right/R" + counter_str + ".png";
       cv::imwrite(path_r, cv_img_r);
     } catch (cv_bridge::Exception & e) {
       RCLCPP_ERROR(this->get_logger(), "Erro no cv_bridge (Direita): %s", e.what());
@@ -109,7 +118,7 @@ private:
     try {
       pcl::PointCloud<pcl::PointXYZ> pcl_cloud;
       pcl::fromROSMsg(*msg_pc2, pcl_cloud);
-      std::string path_sonar = save_path_ + "/SONAR" + counter_str + ".ply";
+      std::string path_sonar = save_path_ + "/sonar/SONAR" + counter_str + ".ply";
       
       // Salva em formato ASCII ou Binário (Binário é menor e mais rápido)
       pcl::io::savePLYFileBinary(path_sonar, pcl_cloud);
@@ -117,12 +126,19 @@ private:
       RCLCPP_ERROR(this->get_logger(), "Erro ao salvar PLY: %s", e.what());
     }
 
-    RCLCPP_INFO(this->get_logger(), "Dados salvos com índice: %s", counter_str.c_str());
+    RCLCPP_INFO(this->get_logger(), "Save data as: %s", counter_str.c_str());
     msg_counter_++;
+    get_data = false;
+  }
+
+  void get_data_srv(const std::shared_ptr<std_srvs::srv::Trigger::Request> request, std::shared_ptr<std_srvs::srv::Trigger::Response> response)
+  {
+    // Este serviço pode ser usado para retornar o caminho do último arquivo salvo ou para acionar uma ação específica
+
+    get_data = true;
+    response->success = true;
+    response->message = "Request data acquisition, last one: " + std::to_string(msg_counter_ - 1);
   }
 };
 
-}  // namespace voris_log
-
-// Registra o nó como um componente instanciável
-RCLCPP_COMPONENTS_REGISTER_NODE(voris_log::DataSaverNode)
+} RCLCPP_COMPONENTS_REGISTER_NODE(voris_log::DataSaverNode)
