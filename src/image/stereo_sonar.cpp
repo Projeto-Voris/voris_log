@@ -59,7 +59,7 @@ public:
     // Usando rmw_qos_profile_sensor_data (Best Effort) que é comum para sensores
     rmw_qos_profile_t qos_profile = rmw_qos_profile_sensor_data;
 
-    odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>("/odometry", rclcpp::SensorDataQoS(), std::bind(&DataSaverNode::odomCallback, this, std::placeholders::_1));
+    odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>("odometry", rclcpp::SensorDataQoS(), std::bind(&DataSaverNode::odomCallback, this, std::placeholders::_1));
 
     sub_img_left_.subscribe(this, "camera/left", qos_profile);
     sub_img_right_.subscribe(this, "camera/right", qos_profile);
