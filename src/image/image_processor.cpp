@@ -17,18 +17,22 @@ public:
     // Parâmetros
     this->declare_parameter<int>("resize_width", 640);
     this->declare_parameter<int>("resize_height", 480);
-    this->declare_parameter<int>("jpeg_quality", 80); // Controle manual da qualidade
+    this->declare_parameter<int>("jpeg_quality", 40); // Controle manual da qualidade
 
-    // 1. Subscriber (Entrada Raw)
-    // Mantemos sensor_msgs::msg::Image na entrada para pegar do driver
+    rclcpp::QoS qos_profile(2); // QoS Best Effort para sensores
+    qos_profile.reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
+    auto cb_group = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+
+    rclcpp::SubscriptionOptions sub_options;
+    sub_options.callback_group = cb_group;
+
     sub_ = this->create_subscription<sensor_msgs::msg::Image>(
       "input/image", 
       rclcpp::SensorDataQoS(), // QoS Best Effort (bom para câmeras)
-      std::bind(&ImageProcessorNode::imageCallback, this, std::placeholders::_1));
+      std::bind(&ImageProcessorNode::imageCallback, this, std::placeholders::_1), sub_options);
 
-    // 2. Publisher (Saída SOMENTE Comprimida)
-    // Mudamos para CompressedImage direto
-    pub_ = this->create_publisher<sensor_msgs::msg::CompressedImage>("output/compressed_image", 10);
+
+    pub_ = this->create_publisher<sensor_msgs::msg::CompressedImage>("output/compressed_image", qos_profile); // Publica CompressedImage
 
     RCLCPP_INFO(this->get_logger(), "Image Processor (JPEG Output Only) iniciado.");
   }
@@ -41,7 +45,7 @@ private:
       // O driver da Spinnaker geralmente manda BayerRG8. 
       // O JPEG precisa de cor (BGR) ou Mono. "bgr8" força a conversão correta.
       // Se já vier BGR, ele só repassa o ponteiro (zero-copy-ish).
-      cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, msg->encoding);
+      cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8);
 
       int target_width = this->get_parameter("resize_width").as_int();
       int target_height = this->get_parameter("resize_height").as_int();

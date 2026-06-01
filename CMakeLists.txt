@@ -69,10 +69,10 @@ add_executable(posearray_cb src/data/posearray_cb.cpp)
 ament_target_dependencies(posearray_cb geometry_msgs rclcpp)
 
 
-add_executable(stereo_save src/image/stereo_img_save.cpp )
-target_include_directories(stereo_save PRIVATE include)
-ament_target_dependencies(stereo_save image_transport cv_bridge message_filters rclcpp sensor_msgs)
-target_link_libraries(stereo_save ${OpenCV_LIBS} "${cpp_typesupport_target}")
+# add_executable(stereo_save src/image/stereo_img_save.cpp )
+# target_include_directories(stereo_save PRIVATE include)
+
+
 
 add_executable(save_dt_images src/image/save_images_dt.cpp )
 target_include_directories(save_dt_images PRIVATE include)
@@ -138,6 +138,25 @@ rclcpp_components_register_node(image_processor_component
   EXECUTABLE image_processor_node
 )
 
+add_library(stereo_save_component SHARED src/image/stereo_img_save.cpp)
+target_link_libraries(stereo_save_component ${OpenCV_LIBS} "${cpp_typesupport_target}")
+ament_target_dependencies(stereo_save_component
+  rclcpp
+  rclcpp_components
+  sensor_msgs
+  image_transport
+  cv_bridge
+  message_filters
+  nav_msgs
+  OpenCV
+)
+
+rclcpp_components_register_node(stereo_save_component
+  PLUGIN "voris_log::ImageSaver"
+  EXECUTABLE stereo_save_node
+)
+
+
 # Componente DVL
 add_library(dvl_node_component SHARED src/data/dvl_node.cpp)
 ament_target_dependencies(dvl_node_component
@@ -153,6 +172,7 @@ rclcpp_components_register_node(dvl_node_component
   PLUGIN "dvl_log::DVLNode"
   EXECUTABLE dvl_node
 )
+
 
 
 add_library(stereo_sonar_component SHARED src/image/stereo_sonar.cpp)
@@ -172,6 +192,8 @@ ament_target_dependencies(stereo_sonar_component
   message_filters
   cv_bridge
   pcl_conversions
+  std_srvs
+  nav_msgs
 )
 
 rclcpp_components_register_node(stereo_sonar_component
@@ -179,8 +201,7 @@ rclcpp_components_register_node(stereo_sonar_component
   EXECUTABLE stereo_sonar_node
 )
 
-# CORRIGIDO: Adicionado o "dvl_node_component" na instalação das bibliotecas
-install(TARGETS image_processor_component stereo_sonar_component dvl_node_component
+install(TARGETS image_processor_component stereo_sonar_component dvl_node_component stereo_save_component
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -189,11 +210,9 @@ install(TARGETS image_processor_component stereo_sonar_component dvl_node_compon
 
 install(TARGETS
         pose_log
-        # REMOVIDO: "dvl_node" duplicado foi retirado daqui
         posestamped_cb
         posearray_cb
         odom_node
-        stereo_save
         stereo_view
         save_dt_images
         images_acquisition

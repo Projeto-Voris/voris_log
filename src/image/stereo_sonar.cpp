@@ -4,7 +4,7 @@
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <std_srvs/srv/trigger.hpp>
-
+#include <nav_msgs/msg/odometry.hpp>
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include <message_filters/synchronizer.h>
@@ -21,6 +21,7 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <fstream>
 
 namespace voris_log
 {
@@ -41,6 +42,15 @@ public:
       std::filesystem::create_directories(save_path_ + "/left");
       std::filesystem::create_directories(save_path_ + "/right");
       std::filesystem::create_directories(save_path_ + "/sonar");
+      std::string odom_file_path = save_path_ + "/odom_data.txt";
+      odom_file_.open(odom_file_path, std::ios::out);
+        if (!odom_file_.is_open()) {
+            RCLCPP_ERROR(this->get_logger(), "Cannot Open file");
+        } else {
+            // Escreve um cabeçalho opcional no arquivo para organizar os dados
+            odom_file_ << "Timestamp, x, y, z, w, x, y, z\n";
+        }
+
     }
 
     RCLCPP_INFO(this->get_logger(), "Salvando dados no diretório: %s", save_path_.c_str());
@@ -48,6 +58,8 @@ public:
     // 2. Configuração dos Subscribers com message_filters
     // Usando rmw_qos_profile_sensor_data (Best Effort) que é comum para sensores
     rmw_qos_profile_t qos_profile = rmw_qos_profile_sensor_data;
+
+    odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>("/odometry", rclcpp::SensorDataQoS(), std::bind(&DataSaverNode::odomCallback, this, std::placeholders::_1));
 
     sub_img_left_.subscribe(this, "camera/left", qos_profile);
     sub_img_right_.subscribe(this, "camera/right", qos_profile);
@@ -75,14 +87,24 @@ private:
   message_filters::Subscriber<ImageMsg> sub_img_left_;
   message_filters::Subscriber<ImageMsg> sub_img_right_;
   message_filters::Subscriber<Pc2Msg> sub_sonar_pc_;
+
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
   
   std::shared_ptr<Sync> sync_;
 
-rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr get_data_srv_;
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr get_data_srv_;
 
   std::string save_path_;
   bool get_data{false};
   int msg_counter_;
+  std::ofstream odom_file_;
+  nav_msgs::msg::Odometry::ConstSharedPtr last_odom_;
+
+  void odomCallback(const nav_msgs::msg::Odometry::ConstSharedPtr & msg)
+  {
+    last_odom_ = msg;
+  }
+
 
   // Callback chamado quando as 3 mensagens estão sincronizadas
   void syncCallback(const ImageMsg::ConstSharedPtr & msg_img_l, const ImageMsg::ConstSharedPtr & msg_img_r, const Pc2Msg::ConstSharedPtr & msg_pc2)
@@ -96,19 +118,20 @@ rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr get_data_srv_;
     ss << std::setw(3) << std::setfill('0') << msg_counter_;
     std::string counter_str = ss.str();
 
-    // Salvar a Imagem Esquerda (L###.png)
     try {
-      cv::Mat cv_img_l = cv_bridge::toCvShare(msg_img_l, "bgr8")->image;
-      std::string path_l = save_path_ + "/left/L" + counter_str + ".png";
-      cv::imwrite(path_l, cv_img_l);
-    } catch (cv_bridge::Exception & e) {
-      RCLCPP_ERROR(this->get_logger(), "Erro no cv_bridge (Esquerda): %s", e.what());
-    }
-
-    // Salvar a Imagem Direita (R###.png)
-    try {
-      cv::Mat cv_img_r = cv_bridge::toCvShare(msg_img_r, "bgr8")->image;
-      std::string path_r = save_path_ + "/right/R" + counter_str + ".png";
+        cv::Mat cv_img_l = cv_bridge::toCvShare(msg_img_l, msg_img_l->encoding)->image;
+        cv::cvtColor(cv_img_l, cv_img_l, cv::COLOR_BayerBG2BGR);
+        std::string path_l = save_path_ + "/left/L" + counter_str + ".png";
+        cv::imwrite(path_l, cv_img_l);
+      } catch (cv_bridge::Exception & e) {
+        RCLCPP_ERROR(this->get_logger(), "Erro no cv_bridge (Esquerda): %s", e.what());
+      }
+      
+      // Salvar a Imagem Direita (R###.png)
+      try {
+        cv::Mat cv_img_r = cv_bridge::toCvShare(msg_img_r, msg_img_r->encoding)->image;
+        cv::cvtColor(cv_img_r, cv_img_r, cv::COLOR_BayerBG2BGR);
+        std::string path_r = save_path_ + "/right/R" + counter_str + ".png";
       cv::imwrite(path_r, cv_img_r);
     } catch (cv_bridge::Exception & e) {
       RCLCPP_ERROR(this->get_logger(), "Erro no cv_bridge (Direita): %s", e.what());
@@ -125,6 +148,22 @@ rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr get_data_srv_;
     } catch (std::exception & e) {
       RCLCPP_ERROR(this->get_logger(), "Erro ao salvar PLY: %s", e.what());
     }
+
+    if(odom_file_.is_open()){
+            odom_file_ << last_odom_->header.stamp.sec << "." << last_odom_->header.stamp.nanosec << ","
+                    << last_odom_->pose.pose.position.x << ","
+                    << last_odom_->pose.pose.position.y << ","
+                    << last_odom_->pose.pose.position.z << ","
+                    << last_odom_->pose.pose.orientation.w << ","
+                    << last_odom_->pose.pose.orientation.x << ","
+                    << last_odom_->pose.pose.orientation.y << ","
+                    << last_odom_->pose.pose.orientation.z << "\n";
+
+            odom_file_.flush();   
+        } else {
+            RCLCPP_ERROR(this->get_logger(), "File is not open");
+        }
+
 
     RCLCPP_INFO(this->get_logger(), "Save data as: %s", counter_str.c_str());
     msg_counter_++;
