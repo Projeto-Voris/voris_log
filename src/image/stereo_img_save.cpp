@@ -20,14 +20,14 @@ namespace voris_log
         sub_options.callback_group = cb_group;
             
         // Initialize the subscribers using the node's interface directly
-        left_sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image>>(this, "/camera_1/image_raw", rmw_qos_profile_sensor_data, sub_options);
-        right_sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image>>(this, "/camera_2/image_raw", rmw_qos_profile_sensor_data, sub_options);
+        left_sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image>>(this, "camera_1/image_raw", rmw_qos_profile_sensor_data, sub_options);
+        right_sub = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image>>(this, "camera_2/image_raw", rmw_qos_profile_sensor_data, sub_options);
         sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicy>>( SyncPolicy(10), *left_sub, *right_sub);
         sync_->registerCallback(&ImageSaver::images_cb, this);
         
-        odom_sub = this->create_subscription<nav_msgs::msg::Odometry>("/odometry", rclcpp::SensorDataQoS(), std::bind(&ImageSaver::odom_cb, this, std::placeholders::_1));
+        odom_sub = this->create_subscription<nav_msgs::msg::Odometry>("odometry", rclcpp::SensorDataQoS(), std::bind(&ImageSaver::odom_cb, this, std::placeholders::_1));
         // Initialize service
-        save_image_srv = this->create_service<voris_log::srv::SaveImages>("/save_images", std::bind(&ImageSaver::save_image_cb, this, std::placeholders::_1, std::placeholders::_2));
+        save_image_srv = this->create_service<voris_log::srv::SaveImages>("save_images", std::bind(&ImageSaver::save_image_cb, this, std::placeholders::_1, std::placeholders::_2));
 
     }
 

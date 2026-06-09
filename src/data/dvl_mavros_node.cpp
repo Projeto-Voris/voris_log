@@ -29,9 +29,9 @@ public:
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
-    twist_pub_ = this->create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>("dvl_twist_with_covariance", 5);
+    twist_pub_ = this->create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>("dvl/twist_cov", 5);
 
-    pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("dvl_pose_with_covariance", 5);
+    pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("dvl/pose_cov", 5);
 
     pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>("dvl/pose", qos_profile, std::bind(&DVL2MavrosNode::pose_cb, this, std::placeholders::_1), sub_options);
 
@@ -61,6 +61,7 @@ private:
           return false;
         }
       }
+      return true;
     }
 
   void dvl_cb(const marine_acoustic_msgs::msg::Dvl::SharedPtr msg)
