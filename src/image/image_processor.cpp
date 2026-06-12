@@ -15,9 +15,20 @@ public:
   : rclcpp::Node("image_processor", options)
   {
     // Parâmetros
-    this->declare_parameter<int>("resize_width", 640);
-    this->declare_parameter<int>("resize_height", 480);
+    this->declare_parameter<int>("resize_width", 612);
+    this->declare_parameter<int>("resize_height", 512);
     this->declare_parameter<int>("jpeg_quality", 40); // Controle manual da qualidade
+    this->declare_parameter<bool>("apply_clahe", true);
+    this->declare_parameter<int>("clahe_climp", 5);
+    this->declare_parameter<int>("clahe_tile", 5);
+
+    if(this->get_parameter("apply_clahe").as_bool()){
+        int clip_limit = this->get_parameter("clahe_climp").as_int();
+        int tile_grid_size = this->get_parameter("clahe_tile").as_int();
+        clahe_ = cv::createCLAHE(clip_limit, cv::Size(tile_grid_size, tile_grid_size));
+        RCLCPP_INFO(this->get_logger(), "CLAHE ON: clip_limit=%d, tile_grid_size=%dx%d", clip_limit, tile_grid_size, tile_grid_size);
+    }
+
 
     rclcpp::QoS qos_profile(2); // QoS Best Effort para sensores
     qos_profile.reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
@@ -60,6 +71,11 @@ private:
           processed_img = cv_ptr->image;
       }
 
+      if(this->get_parameter("apply_clahe").as_bool()){
+        
+        processed_img = appyCLAHEtoColor(processed_img);
+      }
+
       // 3. Compressão Manual (JPEG)
       std::vector<uchar> buffer;
       std::vector<int> compression_params = {cv::IMWRITE_JPEG_QUALITY, jpeg_quality};
@@ -82,7 +98,29 @@ private:
       RCLCPP_ERROR(this->get_logger(), "Erro no OpenCV: %s", e.what());
     }
   }
+    cv::Mat appyCLAHEtoColor(const cv::Mat& input_bgr)
+    {
+        cv::Mat lab_image;
+        cv::cvtColor(input_bgr, lab_image, cv::COLOR_BGR2Lab);
 
+        // 2. Separar a imagem nos 3 canais (L, A, B)
+        std::vector<cv::Mat> lab_channels(3);
+        cv::split(lab_image, lab_channels);
+
+        // Aplicar o CLAHE exclusivamente no canal L (lab_channels[0])
+        clahe_->apply(lab_channels[0], lab_channels[0]);
+
+        // 4. Juntar os canais modificados de volta em uma única imagem LAB
+        cv::Mat processed_lab;
+        cv::merge(lab_channels, processed_lab);
+
+        // 5. Converter de volta para o padrão BGR
+        cv::Mat output_bgr;
+        cv::cvtColor(processed_lab, output_bgr, cv::COLOR_Lab2BGR);
+
+        return output_bgr;
+    }
+  cv::Ptr<cv::CLAHE> clahe_;
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr sub_;
   rclcpp::Publisher<sensor_msgs::msg::CompressedImage>::SharedPtr pub_; // Tipo alterado
 };
