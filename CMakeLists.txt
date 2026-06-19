@@ -153,6 +153,21 @@ rclcpp_components_register_node(dvl_node_component
   EXECUTABLE dvl_node
 )
 
+# Componente Depth
+add_library(depth_node_component SHARED src/data/depth_node.cpp)
+
+ament_target_dependencies(depth_node_component
+  rclcpp
+  rclcpp_components
+  sensor_msgs
+  geometry_msgs
+)
+
+rclcpp_components_register_node(depth_node_component
+  PLUGIN "depth_log::DepthNode"
+  EXECUTABLE depth_node
+)
+
 
 add_library(stereo_sonar_component SHARED src/image/stereo_sonar.cpp)
 target_include_directories(stereo_sonar_component PRIVATE
@@ -179,7 +194,11 @@ rclcpp_components_register_node(stereo_sonar_component
 )
 
 # CORRIGIDO: Adicionado o "dvl_node_component" na instalação das bibliotecas
-install(TARGETS image_processor_component stereo_sonar_component dvl_node_component
+install(TARGETS
+  image_processor_component
+  stereo_sonar_component
+  dvl_node_component
+  depth_node_component
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -192,7 +211,6 @@ install(TARGETS
         posestamped_cb
         posearray_cb
         odom_node
-        depth_node
         stereo_save
         stereo_view
         save_dt_images
