@@ -89,7 +89,6 @@ target_include_directories(rescale PRIVATE include)
 ament_target_dependencies(rescale image_transport cv_bridge message_filters rclcpp sensor_msgs)
 target_link_libraries(rescale ${OpenCV_LIBS})
 
-
 add_executable(camera_img_save src/image/single_image_save.cpp )
 target_include_directories(camera_img_save PRIVATE include)
 ament_target_dependencies(camera_img_save image_transport cv_bridge rclcpp sensor_msgs)
@@ -193,6 +192,7 @@ install(TARGETS
         posestamped_cb
         posearray_cb
         odom_node
+        depth_node
         stereo_save
         stereo_view
         save_dt_images
