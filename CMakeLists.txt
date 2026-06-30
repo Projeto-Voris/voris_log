@@ -77,7 +77,8 @@ add_executable(rescale src/image/rescale.cpp)
 ament_target_dependencies(rescale image_transport cv_bridge message_filters rclcpp sensor_msgs)
 target_link_libraries(rescale ${OpenCV_LIBS})
 
-add_executable(camera_img_save src/image/single_image_save.cpp)
+add_executable(camera_img_save src/image/single_image_save.cpp )
+target_include_directories(camera_img_save PRIVATE include)
 ament_target_dependencies(camera_img_save image_transport cv_bridge rclcpp sensor_msgs)
 target_link_libraries(camera_img_save ${OpenCV_LIBS} "${cpp_typesupport_target}")
 
@@ -122,8 +123,13 @@ rclcpp_components_register_node(stereo_save_component PLUGIN "voris_log::ImageSa
 
 # DVL Component
 add_library(dvl_node_component SHARED src/data/dvl_node.cpp)
-ament_target_dependencies(dvl_node_component rclcpp rclcpp_components geometry_msgs marine_acoustic_msgs tf2_geometry_msgs tf2_ros)
-rclcpp_components_register_node(dvl_node_component PLUGIN "dvl_log::DVLNode" EXECUTABLE dvl_node)
+ament_target_dependencies(dvl_node_component rclcpp  rclcpp_components geometry_msgs  marine_acoustic_msgs tf2_geometry_msgs tf2_ros )
+rclcpp_components_register_node(dvl_node_component  PLUGIN "dvl_log::DVLNode"  EXECUTABLE dvl_node)
+
+# Componente Depth
+add_library(depth_node_component SHARED src/data/depth_node.cpp)
+ament_target_dependencies(depth_node_component rclcpp  rclcpp_components sensor_msgs geometry_msgs)
+rclcpp_components_register_node(depth_node_component  PLUGIN "depth_log::DepthNode"  EXECUTABLE depth_node)
 
 # Stereo Sonar / PCL Component
 add_library(stereo_sonar_component SHARED src/image/stereo_sonar.cpp)
@@ -146,6 +152,7 @@ install(TARGETS
     dvl_node_component 
     dvl2mavros_node_component
     stereo_save_component
+    depth_node_component
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
