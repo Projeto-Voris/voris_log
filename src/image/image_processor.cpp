@@ -73,7 +73,7 @@ private:
 
       if(this->get_parameter("apply_clahe").as_bool()){
         
-        processed_img = appyCLAHEtoColor(processed_img);
+        processed_img = applyCLAHEtoColor(processed_img);
       }
 
       // 3. Compressão Manual (JPEG)
@@ -98,7 +98,7 @@ private:
       RCLCPP_ERROR(this->get_logger(), "Erro no OpenCV: %s", e.what());
     }
   }
-    cv::Mat appyCLAHEtoColor(const cv::Mat& input_bgr)
+    cv::Mat applyCLAHEtoColor(const cv::Mat& input_bgr)
     {
         cv::Mat lab_image;
         cv::cvtColor(input_bgr, lab_image, cv::COLOR_BGR2Lab);
